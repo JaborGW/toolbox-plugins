@@ -89,7 +89,10 @@ void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
         draw_list->PathStroke(ImGui::ColorConvertFloat4ToU32(color), false, thickness);
     }
 
-    auto y_offset = 0.f;
+    const auto content_center = (size + thickness) * 0.5f + offset;
+    const auto draw_icon = show_icon && texture;
+    const auto image_size = icon.sizes[image_size_index];
+    auto icon_top = content_center.y - image_size.y * icon.centering;
 
     if (show_text) {
         const auto deciseconds = static_cast<int>(duration_seconds * 10 * (1.f - elapsed_portion));
@@ -97,9 +100,10 @@ void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
         ImGui::PushStyleColor(ImGuiCol_Text, color);
         ImGui::PushFont(FontLoader::GetFont(), static_cast<float>(FontLoader::font_sizes[font_size_index + 3]));
         const auto text_size = ImGui::CalcTextSize(text.c_str());
-        y_offset = show_icon && texture ? (text_size.y + icon.sizes[image_size_index].y) / 2 : 0;
+        const auto block_height = draw_icon ? image_size.y + text_size.y : text_size.y;
+        icon_top = content_center.y - block_height * 0.5f;
 
-        ImGui::SetCursorPos((size + thickness - text_size) * 0.5f + ImVec2(0, 3 * y_offset / 4) + offset);
+        ImGui::SetCursorPos(ImVec2(content_center.x - text_size.x * 0.5f, content_center.y + block_height * 0.5f - text_size.y));
         if (show_background) {
             ImGui::TextUnformatted(text.c_str());
         }
@@ -110,9 +114,8 @@ void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
         ImGui::PopStyleColor();
     }
 
-    if (show_icon && texture) {
-        const auto image_size = icon.sizes[image_size_index];
-        ImGui::SetCursorPos((size + thickness) * 0.5f - image_size * icon.centering - ImVec2(0, y_offset / 4) + offset);
+    if (draw_icon) {
+        ImGui::SetCursorPos(ImVec2(content_center.x - image_size.x * icon.centering, icon_top));
         ImGui::Image(reinterpret_cast<ImTextureID>(texture), image_size);
     }
 }
