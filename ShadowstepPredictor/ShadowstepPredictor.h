@@ -33,6 +33,7 @@ public:
 protected:
     const char* Version() const override { return "1.1.0"; }
     bool HasEmptySettings() const override;
+    std::vector<std::wstring> UnavailableFeatures() const override;
     void DrawPluginSettings() override;
 
 private:

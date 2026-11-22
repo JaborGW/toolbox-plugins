@@ -272,6 +272,14 @@ void DialogsWindow::DrawPluginSettings()
     PluginGui::ShowHelp("Allows to send more dialogs, for example to allies in combat. Might flag your account, use at your own risk.");
 }
 
+std::vector<std::wstring> DialogsWindow::UnavailableFeatures() const
+{
+    if (DirectDialog::SendAgentDialogFunction()) {
+        return {};
+    }
+    return {L"\"Send dialogs in combat\""};
+}
+
 bool DialogsWindow::HasEmptySettings() const
 {
     return HasDefaultWindowSettings() && fav_count == default_favorite_count && std::ranges::all_of(fav_index, [](const int index) { return index == 0; })

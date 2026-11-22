@@ -87,6 +87,19 @@ namespace {
     }
 }
 
+std::vector<std::wstring> RawDialogs::UnavailableFeatures() const
+{
+    std::vector<std::wstring> features;
+    const auto packets = CtoS::Initialize();
+    if (!DirectDialog::SendAgentDialogFunction() && !packets) {
+        features.emplace_back(L"/rawdialog bypassing the client's dialog checks");
+    }
+    if (!packets) {
+        features.emplace_back(L"/openchest");
+    }
+    return features;
+}
+
 void RawDialogs::LoadSettings(const wchar_t* folder)
 {
     SpeedrunPlugin::LoadSettings(folder);

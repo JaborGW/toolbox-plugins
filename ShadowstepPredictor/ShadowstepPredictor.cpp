@@ -207,6 +207,14 @@ void ShadowstepPredictor::DrawPluginSettings()
     ImGui::ColorEdit4("Failure", &failure_color.x);
 }
 
+std::vector<std::wstring> ShadowstepPredictor::UnavailableFeatures() const
+{
+    if (IsPathingAvailable()) {
+        return {};
+    }
+    return {L"pathing checks in the predictions"};
+}
+
 bool ShadowstepPredictor::HasEmptySettings() const
 {
     constexpr auto same = [](const ImVec4& a, const ImVec4& b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; };

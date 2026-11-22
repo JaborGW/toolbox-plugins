@@ -8,41 +8,40 @@
 #include <cstring>
 
 namespace GamePatterns {
-    struct BytePattern {
-        const char* name;
+    struct Anchor {
         const char* bytes;
         const char* mask;
-        int offset;
+    };
+
+    struct FunctionPattern {
+        const char* name;
+        Anchor anchors[2];
     };
 
     struct Assertion {
         const char* name;
         const char* file;
         const char* message;
-        int offset;
     };
 
-    constexpr BytePattern SendAgentDialogCaller{"SendAgentDialog caller", "\x89\x4b\x24\x8b\x4b\x28\x83\xe9\x00", "xxxxxxxxx", 0};
+    constexpr Anchor SendAgentDialogCaller{"\x89\x4b\x00\x8b\x4b\x00\x83\xe9\x00\x74\x00\x83\xe9\x01\x0f\x85\x00\x00\x00\x00\x50\xe8", "xx?xx?xxxx?xxxxx????xx"};
     constexpr int send_agent_dialog_call_offset = 0x15;
-    constexpr BytePattern SideWalk{"SideWalk", "\xd9\x46\x04\xd9\x5d\xfc\xd9\x45\x0c\xd9\x45", "xxxxxxxxxx", -0x27};
-    constexpr BytePattern FindPath{"FindPath", "\x8b\x5d\x0c\x8b\x7d\x08\x8b\x70\x14\xd9", "xxxxxxxxxx", -0xE};
-    constexpr Assertion SendPacket{"CtoS SendPacket", "MsgConn.cpp", "bytes >= sizeof(dword)", -0x67};
-    constexpr Assertion GameServerObject{"CtoS game server object", "GcGameCmd.cpp", "No valid case for switch variable 'code'", -0x32};
+    constexpr FunctionPattern SideWalk{"SideWalk", {
+        {"\xd9\x06\xd9\x5d\x00\xd9\x46\x00\xd9\x5d\x00\xd9\x45\x00\xd9\x45\x00\xd8\xc9\x8b\x45\x00", "xxxx?xx?xx?xx?xx?xxxx?"},
+        {"\xda\xe9\xdf\xe0\xf6\xc4\x44\x7a\x00\x83\x3d\x00\x00\x00\x00\xff\x74\x00", "xxxxxxxx?xx????xx?"},
+    }};
+    constexpr FunctionPattern FindPath{"FindPath", {
+        {"\x8b\x5d\x00\x8b\x7d\x00\x8b\x70\x00\xd9\x03\xd9\x5d\x00\xd9\x43\x00", "xx?xx?xx?xxxx?xx?"},
+        {"\xd9\x05\x00\x00\x00\x00\xd8\x5d\x00\xdf\xe0\xf6\xc4\x01\x75\x00\x8b\x4d\x00\x8b\x03", "xx????xx?xxxxxx?xx?xx"},
+    }};
+    constexpr Assertion SendPacket{"CtoS SendPacket", "MsgConn.cpp", "bytes >= sizeof(dword)"};
+    constexpr Assertion GameServerObject{"CtoS game server object", "GcGameCmd.cpp", "No valid case for switch variable 'code'"};
 
     constexpr uint32_t interact_gadget_after_send_dialog = 0x16;
     constexpr uint32_t send_signpost_dialog_after_send_dialog = 0x18;
     constexpr uint32_t call_target_before_send_dialog = 0x18;
-    constexpr int call_target_sender_offset = -0x22;
-
-    inline uintptr_t Find(const BytePattern& pattern)
-    {
-        return GW::Scanner::Find(pattern.bytes, pattern.mask, pattern.offset);
-    }
-
-    inline uintptr_t Find(const Assertion& assertion)
-    {
-        return GW::Scanner::FindAssertion(assertion.file, assertion.message, 0, assertion.offset);
-    }
+    constexpr uintptr_t max_function_start_distance = 0x200;
+    constexpr uintptr_t max_server_object_load_distance = 0x80;
 
     inline bool IsReadable(const void* address, const size_t size)
     {
@@ -53,22 +52,124 @@ namespace GamePatterns {
         return reinterpret_cast<uintptr_t>(address) + size <= reinterpret_cast<uintptr_t>(info.BaseAddress) + info.RegionSize;
     }
 
-    inline uintptr_t FindSendAgentDialog()
+    inline uintptr_t FindUnique(const Anchor& anchor)
     {
-        const auto caller = Find(SendAgentDialogCaller);
-        if (!GW::Scanner::IsValidPtr(caller, GW::ScannerSection::Section_TEXT)) {
+        if (!anchor.bytes) {
             return 0;
         }
-        return GW::Scanner::FunctionFromNearCall(caller + send_agent_dialog_call_offset);
+        const auto first = GW::Scanner::FindNth(anchor.bytes, anchor.mask, 0, 0);
+        return first && !GW::Scanner::FindNth(anchor.bytes, anchor.mask, 1, 0) ? first : 0;
     }
 
-    inline uintptr_t FindGameServerObject()
+    inline uint32_t ReadDword(const uint8_t* bytes)
     {
-        const auto address = Find(GameServerObject);
-        if (!IsReadable(reinterpret_cast<const void*>(address), sizeof(uintptr_t))) {
+        uint32_t value;
+        std::memcpy(&value, bytes, sizeof(value));
+        return value;
+    }
+
+    inline bool IsCode(const uintptr_t address)
+    {
+        return GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT);
+    }
+
+    // Functions follow padding, a return, or a switch jump table; a start hooked by another tool jumps out of the game's code.
+    inline bool IsFunctionStart(const uint8_t* bytes)
+    {
+        const auto prologue = bytes[0] == 0x55 && ((bytes[1] == 0x8B && bytes[2] == 0xEC) || (bytes[1] == 0x89 && bytes[2] == 0xE5));
+        const auto hooked = bytes[0] == 0xE9 && !IsCode(reinterpret_cast<uintptr_t>(bytes) + 5 + static_cast<int32_t>(ReadDword(bytes + 1)));
+        const auto after_boundary = bytes[-1] == 0xCC || bytes[-1] == 0xC3 || bytes[-1] == 0x90 || bytes[-3] == 0xC2 || IsCode(ReadDword(bytes - 4));
+        return (prologue || hooked) && after_boundary;
+    }
+
+    inline bool IsFunctionStart(const uintptr_t address)
+    {
+        const auto bytes = reinterpret_cast<const uint8_t*>(address);
+        return address > 4 && IsReadable(bytes - 4, 9) && IsFunctionStart(bytes);
+    }
+
+    inline uintptr_t FunctionStartBefore(const uintptr_t address)
+    {
+        if (address <= max_function_start_distance + 4) {
             return 0;
         }
-        return *reinterpret_cast<const uintptr_t*>(address);
+        const auto lowest = reinterpret_cast<const uint8_t*>(address - max_function_start_distance);
+        if (!IsReadable(lowest - 4, max_function_start_distance + 9)) {
+            return 0;
+        }
+        for (auto bytes = reinterpret_cast<const uint8_t*>(address); bytes >= lowest; --bytes) {
+            if (IsFunctionStart(bytes)) {
+                return reinterpret_cast<uintptr_t>(bytes);
+            }
+        }
+        return 0;
+    }
+
+    inline uintptr_t FindFunction(const Anchor& anchor)
+    {
+        const auto match = FindUnique(anchor);
+        return match ? FunctionStartBefore(match) : 0;
+    }
+
+    inline uintptr_t FindFunction(const FunctionPattern& pattern)
+    {
+        uintptr_t found = 0;
+        for (const auto& anchor : pattern.anchors) {
+            const auto start = FindFunction(anchor);
+            if (!start) {
+                continue;
+            }
+            if (found && found != start) {
+                return 0;
+            }
+            found = start;
+        }
+        return found;
+    }
+
+    inline uintptr_t FindAssertion(const Assertion& assertion)
+    {
+        return GW::Scanner::FindAssertion(assertion.file, assertion.message, 0, 0);
+    }
+
+    inline uintptr_t FindSendPacket()
+    {
+        const auto assertion = FindAssertion(SendPacket);
+        return assertion ? FunctionStartBefore(assertion) : 0;
+    }
+
+    inline uintptr_t FindSendAgentDialog()
+    {
+        const auto caller = FindUnique(SendAgentDialogCaller);
+        if (!caller) {
+            return 0;
+        }
+        int32_t relative;
+        std::memcpy(&relative, reinterpret_cast<const void*>(caller + send_agent_dialog_call_offset + 1), sizeof(relative));
+        const auto function = caller + send_agent_dialog_call_offset + 5 + relative;
+        return IsFunctionStart(function) ? function : 0;
+    }
+
+    // The server object is the global loaded by `mov eax, [global]; test eax, eax` shortly before the assertion.
+    inline uintptr_t FindGameServerObject()
+    {
+        const auto assertion = FindAssertion(GameServerObject);
+        if (assertion <= max_server_object_load_distance) {
+            return 0;
+        }
+        const auto bytes = reinterpret_cast<const uint8_t*>(assertion);
+        if (!IsReadable(bytes - max_server_object_load_distance, max_server_object_load_distance)) {
+            return 0;
+        }
+        for (uintptr_t distance = 5; distance < max_server_object_load_distance; ++distance) {
+            const auto load = bytes - distance;
+            if (load[0] == 0xA1 && load[5] == 0x85 && load[6] == 0xC0) {
+                uintptr_t global;
+                std::memcpy(&global, load + 1, sizeof(global));
+                return global;
+            }
+        }
+        return 0;
     }
 
     // The game's own SendAgentDialog tail-calls its sender stub after `pop ebp`; its first bytes may already be a hook's jump.
@@ -118,21 +219,24 @@ namespace GamePatterns {
     // The call-target (ping) sender stub is found by the opcode it stores at [ebp-0x10], which moves when the client renumbers.
     struct CallTargetPattern {
         char bytes[5] = {'\xc7', '\x45', '\xf0', 0, 0};
-        BytePattern pattern{"Ping (call target)", nullptr, "xxxx", call_target_sender_offset};
+        FunctionPattern pattern{"Ping (call target)", {}};
 
         CallTargetPattern()
         {
             if (const auto send_dialog = SendDialogOpcode()) {
                 bytes[3] = static_cast<char>(send_dialog - call_target_before_send_dialog);
-                pattern.bytes = bytes;
+                pattern.anchors[0] = {bytes, "xxxx"};
             }
         }
+
+        CallTargetPattern(const CallTargetPattern&) = delete;
+        CallTargetPattern& operator=(const CallTargetPattern&) = delete;
     };
 
     inline uintptr_t FindPing()
     {
         const CallTargetPattern call_target;
-        return call_target.pattern.bytes ? Find(call_target.pattern) : 0;
+        return FindFunction(call_target.pattern);
     }
 
     namespace Gwca {

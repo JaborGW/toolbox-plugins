@@ -1605,7 +1605,16 @@ void RepopMinipetAction::drawSettings()
 
 typedef void(__cdecl* Ping_pt)(GW::CallTargetType callType, GW::AgentID id);
 constexpr auto CallTargetHardMode = static_cast<GW::CallTargetType>(0x4);
-Ping_pt Ping_Func = 0;
+Ping_pt PingFunction()
+{
+    static const auto function = reinterpret_cast<Ping_pt>(GamePatterns::FindPing());
+    return function;
+}
+
+bool IsPingAvailable()
+{
+    return PingFunction() != nullptr;
+}
 
 /// ------------- PingHardModeAction -------------
 void PingHardModeAction::initialAction()
@@ -1617,16 +1626,13 @@ void PingHardModeAction::initialAction()
     const auto player = GW::Agents::GetControlledCharacter();
     if (!player) return;
 
-    if (!Ping_Func) {
-        const auto address = GamePatterns::FindPing();
-        if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) Ping_Func = (Ping_pt)address;
-    }
-    if (!Ping_Func) {
+    const auto ping = PingFunction();
+    if (!ping) {
         return;
     }
 
-    GW::GameThread::Enqueue([pingId = player->agent_id]() {
-        Ping_Func(CallTargetHardMode, pingId);
+    GW::GameThread::Enqueue([ping, pingId = player->agent_id]() {
+        ping(CallTargetHardMode, pingId);
     });
 }
 void PingHardModeAction::drawSettings()
@@ -1646,11 +1652,8 @@ void PingTargetAction::initialAction()
     const auto currentTarget = GW::Agents::GetTargetAsAgentLiving();
     if (!currentTarget) return;
 
-    if (!Ping_Func) {
-        const auto address = GamePatterns::FindPing();
-        if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) Ping_Func = (Ping_pt)address;
-    }
-    if (!Ping_Func) {
+    const auto ping = PingFunction();
+    if (!ping) {
         return;
     }
 
@@ -1662,9 +1665,9 @@ void PingTargetAction::initialAction()
     if (onlyOncePerInstance && pingedTargets.contains(currentTarget->agent_id)) return;
     pingedTargets.insert(currentTarget->agent_id);
     
-    GW::GameThread::Enqueue([id = currentTarget->agent_id]() 
+    GW::GameThread::Enqueue([ping, id = currentTarget->agent_id]() 
     {
-        Ping_Func(GW::CallTargetType::AttackingOrTargetting, id);
+        ping(GW::CallTargetType::AttackingOrTargetting, id);
     });
 }
 void PingTargetAction::drawSettings()
@@ -2231,7 +2234,16 @@ void KeyboardMoveAction::serialize(OutputStream& stream) const
 }
 
 typedef void(__cdecl* SideWalk_pt)(float* position, float* direction, float distance, int flag1, int flag2, uint32_t unknown);
-SideWalk_pt SideWalk_Func = 0;
+SideWalk_pt SideWalkFunction()
+{
+    static const auto function = reinterpret_cast<SideWalk_pt>(GamePatterns::FindFunction(GamePatterns::SideWalk));
+    return function;
+}
+
+bool IsKeyboardMoveAvailable()
+{
+    return SideWalkFunction() != nullptr;
+}
 void KeyboardMoveAction::initialAction()
 {
     Action::initialAction();
@@ -2239,22 +2251,18 @@ void KeyboardMoveAction::initialAction()
     const auto player = GW::Agents::GetControlledCharacter();
     if (!player || GW::GetDistance(player->pos, targetPosition) < 5.f) return;
 
-    if (!SideWalk_Func) 
-    {
-        const auto address = GamePatterns::Find(GamePatterns::SideWalk);
-        if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) SideWalk_Func = (SideWalk_pt)address;
-    }
-    if (!SideWalk_Func) 
+    const auto sideWalk = SideWalkFunction();
+    if (!sideWalk) 
     {
         return;
     }
     startedWalking = false;
 
-    GW::GameThread::Enqueue([playerPos = player->pos, direction = targetPosition - player->pos, movementDirection = movementDirection]() mutable {
+    GW::GameThread::Enqueue([sideWalk, playerPos = player->pos, direction = targetPosition - player->pos, movementDirection = movementDirection]() mutable {
         auto normalizedDirection = GW::Normalize(direction);
         const int forwardsFlag = movementDirection == MovementDirection::Backwards ? -1 : 0;
         const int sideWaysFlag = movementDirection == MovementDirection::Right ? 1 : (movementDirection == MovementDirection::Left ? -1 : 0);
-        SideWalk_Func(reinterpret_cast<float*>(&playerPos), reinterpret_cast<float*>(&normalizedDirection), std::min(GW::GetNorm(direction), 1000.f), forwardsFlag, sideWaysFlag, 1);
+        sideWalk(reinterpret_cast<float*>(&playerPos), reinterpret_cast<float*>(&normalizedDirection), std::min(GW::GetNorm(direction), 1000.f), forwardsFlag, sideWaysFlag, 1);
     });
 }
 
@@ -2268,11 +2276,12 @@ ActionStatus KeyboardMoveAction::isComplete() const
 
     if (GW::GetDistance(player->pos, targetPosition) < 5.f || (!isMoving && startedWalking)) 
     {
-        GW::GameThread::Enqueue([playerPos = player->pos, direction = targetPosition - player->pos, movementDirection = movementDirection]() mutable {
+        const auto sideWalk = SideWalkFunction();
+        if (sideWalk) GW::GameThread::Enqueue([sideWalk, playerPos = player->pos, direction = targetPosition - player->pos, movementDirection = movementDirection]() mutable {
             auto normalizedDirection = GW::Normalize(direction);
             const int forwardsFlag = movementDirection == MovementDirection::Backwards ? -1 : 0;
             const int sideWaysFlag = movementDirection == MovementDirection::Right ? 1 : (movementDirection == MovementDirection::Left ? -1 : 0);
-            SideWalk_Func(reinterpret_cast<float*>(&playerPos), reinterpret_cast<float*>(&normalizedDirection), std::min(GW::GetNorm(direction), 1000.f), forwardsFlag, sideWaysFlag, 1);
+            sideWalk(reinterpret_cast<float*>(&playerPos), reinterpret_cast<float*>(&normalizedDirection), std::min(GW::GetNorm(direction), 1000.f), forwardsFlag, sideWaysFlag, 1);
         });
         return ActionStatus::Complete;
     }

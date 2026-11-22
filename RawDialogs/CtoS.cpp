@@ -31,7 +31,7 @@ namespace CtoS {
         if (IsInitialized()) {
             return true;
         }
-        SendPacket_Func = reinterpret_cast<SendPacket_pt>(GamePatterns::Find(GamePatterns::SendPacket));
+        SendPacket_Func = reinterpret_cast<SendPacket_pt>(GamePatterns::FindSendPacket());
         const auto object_address = GamePatterns::FindGameServerObject();
         game_server_object_address = GamePatterns::IsReadable(reinterpret_cast<const void*>(object_address), sizeof(uint32_t)) ? object_address : 0;
         const auto sender = GamePatterns::FindSendDialogSender(reinterpret_cast<uintptr_t>(DirectDialog::SendAgentDialogFunction()));
@@ -54,8 +54,8 @@ namespace CtoS {
 #ifndef NDEBUG
     void LogDiagnostics()
     {
-        Log::Log("[RawDialog] send fn 0x%X, assertion 0x%X", reinterpret_cast<uintptr_t>(SendPacket_Func), GamePatterns::Find(GamePatterns::Assertion{"", GamePatterns::SendPacket.file, GamePatterns::SendPacket.message, 0}));
-        Log::Log("[RawDialog] server object 0x%X, assertion 0x%X", game_server_object_address, GamePatterns::Find(GamePatterns::Assertion{"", GamePatterns::GameServerObject.file, GamePatterns::GameServerObject.message, 0}));
+        Log::Log("[RawDialog] send fn 0x%X, assertion 0x%X", reinterpret_cast<uintptr_t>(SendPacket_Func), GamePatterns::FindAssertion(GamePatterns::SendPacket));
+        Log::Log("[RawDialog] server object 0x%X, assertion 0x%X", game_server_object_address, GamePatterns::FindAssertion(GamePatterns::GameServerObject));
         const auto send_agent_dialog = reinterpret_cast<const uint8_t*>(DirectDialog::SendAgentDialogFunction());
         if (!GamePatterns::IsReadable(send_agent_dialog, 0x40)) {
             Log::Log("[RawDialog] SendAgentDialog 0x%X not readable", reinterpret_cast<uintptr_t>(send_agent_dialog));

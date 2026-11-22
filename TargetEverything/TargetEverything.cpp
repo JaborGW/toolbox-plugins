@@ -6,6 +6,8 @@
 #include <GWCA/Utilities/Hooker.h>
 
 #include <GamePatterns.h>
+#include <PluginChat.h>
+#include <PluginUtils.h>
 
 #include <cstdint>
 #include <cstring>
@@ -16,8 +18,6 @@
 #include <GWCA/Managers/ChatMgr.h>
 #include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Utilities/Hook.h>
-
-#include <PluginChat.h>
 
 #include <atomic>
 #include <format>
@@ -36,9 +36,10 @@ namespace {
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Func = nullptr;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Ret = nullptr;
 
+    bool hooked_implementation = false;
+
 #ifndef NDEBUG
     int hook_status = -1;
-    bool hooked_implementation = false;
     std::atomic<uint32_t> filter_calls = 0;
     std::atomic<uint32_t> overridden_rejections = 0;
     std::atomic<uint32_t> last_overridden_agent = 0;
@@ -115,9 +116,7 @@ namespace {
         if (!implementation) {
             return export_stub;
         }
-#ifndef NDEBUG
         hooked_implementation = true;
-#endif
         return reinterpret_cast<GetAgentMatchesFlags_pt>(implementation);
     }
 
@@ -185,6 +184,9 @@ void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocat
         hook_status = status;
 #endif
         GW::Hook::EnableHooks(GetAgentMatchesFlags_Func);
+    }
+    if (!hooked_implementation) {
+        PluginChat::ReportUnavailable(PluginUtils::StringToWString(Name()), {L"targeting with keys and on the minimap"}, L"this GWCA version");
     }
 #ifndef NDEBUG
     RegisterDebugCommand();

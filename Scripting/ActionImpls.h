@@ -668,3 +668,6 @@ public:
 private:
     int id = 0;
 };
+
+bool IsPingAvailable();
+bool IsKeyboardMoveAvailable();

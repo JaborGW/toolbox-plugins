@@ -16,6 +16,7 @@ struct OutcomeChances {
 };
 
 void InitializePathing();
+bool IsPathingAvailable();
 const GW::PathingTrapezoid* FindTrapezoid(const GW::GamePos& pos, const GW::PathingMapArray* path_map);
 OutcomeChances DeathsChargePrediction(const PathPoint& player, const GW::Agent* target, const GW::PathingMapArray* path_map);
 OutcomeChances ShadowOfHastePrediction(const PathPoint& player, const PathPoint& return_spot);

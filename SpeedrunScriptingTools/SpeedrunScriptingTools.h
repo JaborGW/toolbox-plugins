@@ -69,6 +69,7 @@ public:
 protected:
     const char* Version() const override { return "2.6.0"; }
     bool HasEmptySettings() const override { return m_scripts.empty() && m_groups.empty(); }
+    std::vector<std::wstring> UnavailableFeatures() const override;
     const wchar_t* CommandAlias() const override { return L"sst"; }
     void DrawPluginSettings() override;
 

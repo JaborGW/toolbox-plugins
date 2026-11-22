@@ -4,6 +4,7 @@
 
 #include <ConditionIO.h>
 #include <ActionIO.h>
+#include <ActionImpls.h>
 #include <InstanceInfo.h>
 #include <QuestInfo.h>
 #include <Keys.h>
@@ -1013,6 +1014,14 @@ bool SpeedrunScriptingTools::WndProc(const UINT Message, const WPARAM wParam, LP
 
     if (disabledKeys.contains(pressedKey)) return true;
     return triggered;
+}
+
+std::vector<std::wstring> SpeedrunScriptingTools::UnavailableFeatures() const
+{
+    std::vector<std::wstring> features;
+    if (!IsPingAvailable()) features.emplace_back(L"ping actions");
+    if (!IsKeyboardMoveAvailable()) features.emplace_back(L"keyboard move action");
+    return features;
 }
 
 void SpeedrunScriptingTools::Initialize(ImGuiContext* ctx, ImGuiAllocFns fns, HMODULE toolbox_dll)

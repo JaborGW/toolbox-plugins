@@ -98,7 +98,12 @@ namespace {
 
 void InitializePathing()
 {
-    FindPath_Func = reinterpret_cast<FindPath_pt>(GamePatterns::Find(GamePatterns::FindPath));
+    FindPath_Func = reinterpret_cast<FindPath_pt>(GamePatterns::FindFunction(GamePatterns::FindPath));
+}
+
+bool IsPathingAvailable()
+{
+    return FindPath_Func != nullptr;
 }
 
 const GW::PathingTrapezoid* FindTrapezoid(const GW::GamePos& pos, const GW::PathingMapArray* path_map)

@@ -25,5 +25,6 @@ public:
 protected:
     const char* Version() const override { return "1.2.0"; }
     bool HasEmptySettings() const override { return !use_ctos; }
+    std::vector<std::wstring> UnavailableFeatures() const override;
     void DrawPluginSettings() override;
 };

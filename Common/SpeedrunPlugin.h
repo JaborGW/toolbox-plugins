@@ -23,6 +23,7 @@
 #include <format>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 template <typename Base>
 class SpeedrunPlugin : public Base {
@@ -49,7 +50,9 @@ public:
         settings_folder = folder;
         Base::LoadSettings(folder);
         GW::GameThread::Enqueue([](void* context) {
-            static_cast<SpeedrunPlugin*>(context)->AnnounceRestorableBackups();
+            const auto plugin = static_cast<SpeedrunPlugin*>(context);
+            plugin->AnnounceRestorableBackups();
+            plugin->ReportUnavailableFeatures();
         }, this);
     }
 
@@ -79,6 +82,8 @@ protected:
     [[nodiscard]] virtual const wchar_t* CommandAlias() const { return nullptr; }
 
     [[nodiscard]] virtual bool HasBackups() const { return true; }
+
+    [[nodiscard]] virtual std::vector<std::wstring> UnavailableFeatures() const { return {}; }
 
     [[nodiscard]] bool HasDefaultWindowSettings() const
         requires std::is_base_of_v<ToolboxUIPlugin, Base>
@@ -132,6 +137,15 @@ private:
     {
         return std::format(L"Backup {}, last change {}, file size {}", backup.path.stem().wstring(),
             PluginUtils::StringToWString(PluginBackups::FormatLocalTime(backup.last_write)), backup.size);
+    }
+
+    void ReportUnavailableFeatures()
+    {
+        if (reported_unavailable_features) {
+            return;
+        }
+        reported_unavailable_features = true;
+        PluginChat::ReportUnavailable(PluginUtils::StringToWString(this->Name()), UnavailableFeatures());
     }
 
     void AnnounceRestorableBackups() const
@@ -256,5 +270,6 @@ private:
     inline static GW::HookEntry restore_command_entry;
     inline static SpeedrunPlugin* instance = nullptr;
     std::wstring settings_folder;
+    bool reported_unavailable_features = false;
     WindowSettings default_window_settings;
 };
