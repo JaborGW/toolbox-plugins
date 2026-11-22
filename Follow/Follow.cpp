@@ -63,7 +63,7 @@ void FollowPlugin::DrawPluginSettings()
 
 void FollowPlugin::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocator_fns, const HMODULE toolbox_dll)
 {
-    ToolboxPlugin::Initialize(ctx, allocator_fns, toolbox_dll);
+    SpeedrunPlugin::Initialize(ctx, allocator_fns, toolbox_dll);
     GW::Chat::CreateCommand(&chat_command_entry, L"follow", [](GW::HookStatus*, const wchar_t*, int, const LPWSTR*) {
         following = !following;
         PluginChat::Write(L"Follow plugin", following ? L"Activated" : L"Deactivated");
@@ -72,6 +72,6 @@ void FollowPlugin::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocator_f
 
 void FollowPlugin::SignalTerminate()
 {
-    ToolboxPlugin::SignalTerminate();
+    SpeedrunPlugin::SignalTerminate();
     GW::Chat::DeleteCommand(&chat_command_entry, L"follow");
 }
