@@ -3,19 +3,24 @@
 #include <GWCA/Constants/Constants.h>
 #include <GWCA/GameEntities/Agent.h>
 #include <GWCA/Managers/AgentMgr.h>
+#include <GWCA/Utilities/Hooker.h>
+
+#include <cstdint>
+#include <cstring>
+
+#ifndef NDEBUG
 #include <GWCA/GameContainers/Array.h>
 #include <GWCA/GameContainers/GamePos.h>
 #include <GWCA/Managers/ChatMgr.h>
 #include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Utilities/Hook.h>
-#include <GWCA/Utilities/Hooker.h>
 
 #include <PluginChat.h>
 
 #include <atomic>
-#include <cstring>
 #include <format>
 #include <string>
+#endif
 
 DLLAPI ToolboxPlugin* ToolboxPluginInstance()
 {
@@ -28,12 +33,15 @@ namespace {
     using GetAgentMatchesFlags_pt = bool(__cdecl*)(const GW::Agent* agent, AgentTargetFlags flags) noexcept;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Func = nullptr;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Ret = nullptr;
+
+#ifndef NDEBUG
     int hook_status = -1;
     bool hooked_implementation = false;
     std::atomic<uint32_t> filter_calls = 0;
     std::atomic<uint32_t> overridden_rejections = 0;
     std::atomic<uint32_t> last_overridden_agent = 0;
     GW::HookEntry chat_command_entry;
+#endif
 
     struct LivingCategory {
         AgentTargetFlags include;
@@ -84,13 +92,17 @@ namespace {
     bool __cdecl OnGetAgentMatchesFlags(const GW::Agent* agent, const AgentTargetFlags flags) noexcept
     {
         GW::Hook::EnterHook();
-        ++filter_calls;
         auto matches = GetAgentMatchesFlags_Ret(agent, flags);
         if (!matches && agent && MatchesIgnoringTargetability(agent, flags)) {
             matches = true;
+#ifndef NDEBUG
             ++overridden_rejections;
             last_overridden_agent = agent->agent_id;
+#endif
         }
+#ifndef NDEBUG
+        ++filter_calls;
+#endif
         GW::Hook::LeaveHook();
         return matches;
     }
@@ -105,11 +117,14 @@ namespace {
         }
         int32_t relative;
         std::memcpy(&relative, bytes + sizeof(stub_prologue), sizeof(relative));
+#ifndef NDEBUG
         hooked_implementation = true;
+#endif
         const auto call_end = reinterpret_cast<uintptr_t>(bytes) + sizeof(stub_prologue) + sizeof(relative);
         return reinterpret_cast<GetAgentMatchesFlags_pt>(call_end + relative);
     }
 
+#ifndef NDEBUG
     const GW::AgentLiving* NearestRejectedAgent()
     {
         const auto agents = GW::Agents::GetAgentArray();
@@ -146,6 +161,19 @@ namespace {
                 agent_id, agent->player_number, static_cast<int>(agent->allegiance), sent, GW::Agents::GetTargetId()));
         });
     }
+
+    void RegisterDebugCommand()
+    {
+        GW::Chat::CreateCommand(&chat_command_entry, L"targeteverything", [](GW::HookStatus*, const wchar_t*, const int argc, const LPWSTR* argv) {
+            if (argc >= 2 && std::wstring(argv[1]) == L"nearest") {
+                TryTargetNearestRejected();
+                return;
+            }
+            PluginChat::Write(L"Target Everything", std::format(L"filter hook: {}, hooked implementation: {}, filter calls: {}, overridden rejections: {}, last overridden agent: {}",
+                hook_status, hooked_implementation, filter_calls.load(), overridden_rejections.load(), last_overridden_agent.load()));
+        });
+    }
+#endif
 }
 
 void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocator_fns, const HMODULE toolbox_dll)
@@ -155,23 +183,23 @@ void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocat
     const auto export_stub = gwca ? reinterpret_cast<GetAgentMatchesFlags_pt>(GetProcAddress(gwca, "GW_Agents_GetAgentMatchesFlags")) : nullptr;
     GetAgentMatchesFlags_Func = export_stub ? ResolveImplementation(export_stub) : nullptr;
     if (GetAgentMatchesFlags_Func) {
-        hook_status = GW::Hook::CreateHook(&GetAgentMatchesFlags_Func, &OnGetAgentMatchesFlags, &GetAgentMatchesFlags_Ret);
+        [[maybe_unused]] const auto status = GW::Hook::CreateHook(&GetAgentMatchesFlags_Func, &OnGetAgentMatchesFlags, &GetAgentMatchesFlags_Ret);
+#ifndef NDEBUG
+        hook_status = status;
+#endif
         GW::Hook::EnableHooks(GetAgentMatchesFlags_Func);
     }
-    GW::Chat::CreateCommand(&chat_command_entry, L"targeteverything", [](GW::HookStatus*, const wchar_t*, const int argc, const LPWSTR* argv) {
-        if (argc >= 2 && std::wstring(argv[1]) == L"nearest") {
-            TryTargetNearestRejected();
-            return;
-        }
-        PluginChat::Write(L"Target Everything", std::format(L"filter hook: {}, hooked implementation: {}, filter calls: {}, overridden rejections: {}, last overridden agent: {}",
-            hook_status, hooked_implementation, filter_calls.load(), overridden_rejections.load(), last_overridden_agent.load()));
-    });
+#ifndef NDEBUG
+    RegisterDebugCommand();
+#endif
 }
 
 void TargetEverything::SignalTerminate()
 {
     ToolboxPlugin::SignalTerminate();
+#ifndef NDEBUG
     GW::Chat::DeleteCommand(&chat_command_entry, L"targeteverything");
+#endif
     if (GetAgentMatchesFlags_Func) {
         GW::Hook::DisableHooks(GetAgentMatchesFlags_Func);
         GW::Hook::RemoveHook(GetAgentMatchesFlags_Func);
