@@ -201,7 +201,7 @@ void ProjectileIndicator::DrawPluginSettings()
 
 bool ProjectileIndicator::HasEmptySettings() const
 {
-    return HasDefaultWindowSettings() && filled && projectile_timer == default_projectile_timer
+    return filled && projectile_timer == default_projectile_timer
         && color.x == default_color.x && color.y == default_color.y && color.z == default_color.z && color.w == default_color.w
         && FormatIds(tracked_skills) == FormatIds(ParseIds<GW::Constants::SkillID>(default_tracked_skills))
         && tracked_enemy_models.empty()

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ToolboxUIPlugin.h>
+#include <ToolboxPlugin.h>
 #include <SpeedrunPlugin.h>
 
 #include <GWCA/Constants/Skills.h>
@@ -9,13 +9,14 @@
 
 #include <vector>
 
-class ProjectileIndicator : public SpeedrunPlugin<ToolboxUIPlugin> {
+class ProjectileIndicator : public SpeedrunPlugin<ToolboxPlugin> {
 public:
     ProjectileIndicator() = default;
     ~ProjectileIndicator() override = default;
 
     const char* Name() const override { return "ProjectileIndicator"; }
     const char* Icon() const override { return ICON_FA_CIRCLE; }
+    bool HasSettings() const override { return true; }
 
     void Initialize(ImGuiContext* ctx, ImGuiAllocFns allocator_fns, HMODULE toolbox_dll) override;
     void SignalTerminate() override;
