@@ -1,0 +1,17 @@
+#pragma once
+
+#include <ToolboxPlugin.h>
+
+#include <IconsFontAwesome5.h>
+
+class TargetEverything : public ToolboxPlugin {
+public:
+    TargetEverything() = default;
+    ~TargetEverything() override = default;
+
+    const char* Name() const override { return "Target Everything"; }
+    const char* Icon() const override { return ICON_FA_CROSSHAIRS; }
+
+    void Initialize(ImGuiContext* ctx, ImGuiAllocFns allocator_fns, HMODULE toolbox_dll) override;
+    void SignalTerminate() override;
+};
