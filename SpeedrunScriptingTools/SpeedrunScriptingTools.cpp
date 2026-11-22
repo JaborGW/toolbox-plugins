@@ -70,11 +70,7 @@ namespace {
         sst->triggerScripts(Trigger::DisplayDialog, [&](const Script& s){ return !s.triggerData.message.empty() && WStringToString(decoded).contains(s.triggerData.message); });
     }
 
-    // Versions 1-7: Prerelease, can be ignored
-    // Version 8: 1.0-1.2. See SerializationIncrement for deprecation context
-    // Version 9: Skipped because exported scripts started with profanity lol
-    // Version 10: 1.3-1.6. Removed when most conditions were moved to use characteristics
-    // Version 11: Current.
+    // v1-7 prerelease, v8 = 1.0-1.2, v9 skipped (exports began with profanity), v10 = 1.3-1.6 (see SerializationIncrement).
     constexpr long currentVersion = 11;
 
     enum CheckType 
@@ -110,7 +106,7 @@ namespace {
             case Trigger::DungeonReward:
                 break;
             case Trigger::Hotkey:
-                stream << script.triggerData.hotkey.keyData;
+                stream << script.triggerData.hotkey.key;
                 stream << script.triggerData.hotkey.modifier;
                 break;
             case Trigger::ChatMessage:
@@ -132,7 +128,7 @@ namespace {
                 break;
         }
 
-        stream << script.enabledToggleHotkey.keyData;
+        stream << script.enabledToggleHotkey.key;
         stream << script.enabledToggleHotkey.modifier;
         stream << script.showMessageWhenTriggered;
         stream << script.showMessageWhenToggled;
@@ -186,9 +182,9 @@ namespace {
         if (version == 10) 
         {
             // V10 Scripts always serialized all trigger data
-            stream >> result.triggerData.hotkey.keyData;
+            stream >> result.triggerData.hotkey.key;
             stream >> result.triggerData.hotkey.modifier;
-            stream >> result.enabledToggleHotkey.keyData;
+            stream >> result.enabledToggleHotkey.key;
             stream >> result.enabledToggleHotkey.modifier;
             stream >> result.showMessageWhenTriggered;
             stream >> result.showMessageWhenToggled;
@@ -203,7 +199,7 @@ namespace {
                 case Trigger::DungeonReward:
                     break;
                 case Trigger::Hotkey:
-                    stream >> result.triggerData.hotkey.keyData;
+                    stream >> result.triggerData.hotkey.key;
                     stream >> result.triggerData.hotkey.modifier;
                     break;
                 case Trigger::ChatMessage:
@@ -224,7 +220,7 @@ namespace {
                     result.triggerData.message = readStringWithSpaces(stream);
                     break;
             }
-            stream >> result.enabledToggleHotkey.keyData;
+            stream >> result.enabledToggleHotkey.key;
             stream >> result.enabledToggleHotkey.modifier;
             stream >> result.showMessageWhenTriggered;
             stream >> result.showMessageWhenToggled;
@@ -317,7 +313,7 @@ namespace {
                     result += "On instance load";
                     break;
                 case Trigger::Hotkey:
-                    result += script.triggerData.hotkey.keyData ? makeHotkeyDescription(script.triggerData.hotkey) : "Undefined hotkey";
+                    result += script.triggerData.hotkey.key ? Hotkeys::Describe(script.triggerData.hotkey) : "Undefined hotkey";
                     break;
                 case Trigger::HardModePing:
                     result += "On hard mode ping";
@@ -356,9 +352,9 @@ namespace {
             }
         }
         result += "]";
-        if (script.enabledToggleHotkey.keyData)
+        if (script.enabledToggleHotkey.key)
         {
-            result += "[Toggle " + makeHotkeyDescription(script.enabledToggleHotkey) + "]";
+            result += "[Toggle " + Hotkeys::Describe(script.enabledToggleHotkey) + "]";
         }
 
 
@@ -400,7 +396,6 @@ namespace {
         }
         if (conditionToDelete.has_value()) conditions.erase(conditionToDelete.value());
         if (conditionsToSwap.has_value()) std::swap(*conditionsToSwap->first, *conditionsToSwap->second);
-        // Add condition
         if (auto newCondition = drawConditionSelector(ImGui::GetContentRegionAvail().x)) {
             conditions.push_back(std::move(newCondition));
         }
@@ -430,7 +425,6 @@ namespace {
         }
         if (actionToDelete.has_value()) actions.erase(actionToDelete.value());
         if (actionsToSwap.has_value()) std::swap(*actionsToSwap->first, *actionsToSwap->second);
-        // Add action
         if (auto newAction = drawActionSelector(ImGui::GetContentRegionAvail().x)) {
             actions.push_back(std::move(newAction));
         }
@@ -498,19 +492,17 @@ namespace {
                 ImGui::PopID();
 
                 ImGui::PushID(2);
-                // Script settings
                 ImGui::Separator();
                 disabledKeysChanged |= ImGui::Checkbox("Enabled", &scriptIt->enabled);
                 ImGui::SameLine();
 
-                auto description = scriptIt->enabledToggleHotkey.keyData ? makeHotkeyDescription(scriptIt->enabledToggleHotkey) : "Set enable toggle";
-                drawHotkeySelector(scriptIt->enabledToggleHotkey, description, 80.f);
-                if (scriptIt->enabledToggleHotkey.keyData) {
+                Hotkeys::DrawSelector(scriptIt->enabledToggleHotkey, 80.f, "Set enable toggle");
+                if (scriptIt->enabledToggleHotkey.key) {
                     ImGui::SameLine();
                     ImGui::Text("Toggle");
                     ImGui::SameLine();
                     if (ImGui::Button("X", ImVec2(20.f, 0))) {
-                        scriptIt->enabledToggleHotkey.keyData = {};
+                        scriptIt->enabledToggleHotkey.key = {};
                         scriptIt->showMessageWhenToggled = false;
                     }
                     ImGui::SameLine();
@@ -596,7 +588,6 @@ namespace {
                 disabledKeysChanged |= scriptDisabledKeysChanged;
                 ImGui::PopID();
 
-                // Group settings
                 ImGui::Separator();
                 disabledKeysChanged |= ImGui::Checkbox("Enabled", &groupIt->enabled);
                 ImGui::SameLine();
@@ -691,7 +682,6 @@ void SpeedrunScriptingTools::DrawPluginSettings()
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
     }
 
-    // Add script
     if (ImGui::Button("Add script", ImVec2(ImGui::GetContentRegionAvail().x / 3, 0))) {
         m_scripts.push_back({});
     }
@@ -728,7 +718,6 @@ void SpeedrunScriptingTools::DrawPluginSettings()
             }
         }
     }
-    // Debug info
     auto scriptActionCounts = std::string{};
     for (const auto& script : m_currentScripts) scriptActionCounts += std::to_string(script.actions.size()) + ", ";
     ImGui::Text("Actions in queue: [%s]", scriptActionCounts.c_str());
@@ -737,14 +726,13 @@ void SpeedrunScriptingTools::DrawPluginSettings()
     ImGui::SameLine();
     ImGui::Text("Clear scripts hotkey:");
     ImGui::SameLine();
-    auto description = clearScriptsKey.keyData ? makeHotkeyDescription(clearScriptsKey) : "Set key";
-    drawHotkeySelector(clearScriptsKey, description, 80.f);
-    if (clearScriptsKey.keyData) 
+    Hotkeys::DrawSelector(clearScriptsKey, 80.f, "Set key");
+    if (clearScriptsKey.key) 
     {
         ImGui::SameLine();
         if (ImGui::Button("X", ImVec2(20.f, 0))) 
         {
-            clearScriptsKey.keyData = 0;
+            clearScriptsKey.key = 0;
             clearScriptsKey.modifier = 0;
         }
     }
@@ -785,7 +773,7 @@ void SpeedrunScriptingTools::loadScripts()
     clearScriptsKey = {};
     LoadSetting("runInOutpost", runInOutposts);
     LoadSetting("alwaysBlockHotkeyKeys", alwaysBlockHotkeyKeys);
-    LoadSetting("clearScriptsKey", clearScriptsKey.keyData);
+    LoadSetting("clearScriptsKey", clearScriptsKey.key);
     LoadSetting("clearScriptsMod", clearScriptsKey.modifier);
 
     if (savedVersion == 8) logMessage("Scripts from versions before 1.3 cannot be imported");
@@ -829,7 +817,7 @@ void SpeedrunScriptingTools::SaveSettings(const wchar_t* folder)
     SaveSetting("version", currentVersion);
     SaveSetting("runInOutpost", runInOutposts);
     SaveSetting("alwaysBlockHotkeyKeys", alwaysBlockHotkeyKeys);
-    SaveSetting("clearScriptsKey", clearScriptsKey.keyData);
+    SaveSetting("clearScriptsKey", clearScriptsKey.key);
     SaveSetting("clearScriptsMod", clearScriptsKey.modifier);
 
     {
@@ -858,7 +846,6 @@ void SpeedrunScriptingTools::Update(float delta)
     ToolboxPlugin::Update(delta);
 
     if (GW::Map::GetInstanceType() == GW::Constants::InstanceType::Loading && !isInLoadingScreen) {
-        // First frame on new loading screen
         isInLoadingScreen = true;
         clear();
     }
@@ -880,7 +867,6 @@ void SpeedrunScriptingTools::Update(float delta)
     {
         while (currentScript.actions.size() > 0) 
         {
-            // Execute current script
             auto& currentActions = currentScript.actions;
             auto& currentAction = **currentActions.begin();
             if (currentAction.behaviour().test(ActionBehaviourFlag::ImmediateFinish)) {
@@ -938,7 +924,6 @@ void SpeedrunScriptingTools::Update(float delta)
         return s.triggered;
     };
 
-    // Find script to use
     const auto checkScripts = [&](std::vector<Script>& scripts, std::vector<ConditionPtr>& groupConditions) 
     {
         if (std::ranges::any_of(m_currentScripts, [](const Script& s){ return s.globallyExclusive; })) return;
@@ -956,7 +941,6 @@ void SpeedrunScriptingTools::Update(float delta)
                 addToCurrentScripts(script);
             return;
         }
-        // Run any scripts still waiting for execution
         for (auto& script : scripts | std::views::filter(std::not_fn(hasTrigger)) | std::views::filter(isTriggered)) 
         {
             if (isRunningAnyScript && !script.canLaunchInParallel) continue;
@@ -968,7 +952,6 @@ void SpeedrunScriptingTools::Update(float delta)
             return;
         }
         
-        // Trigger "Always on" scripts
         for (auto& script : scripts | std::views::filter(std::not_fn(hasTrigger))) 
         {
             script.triggered = (!isRunningAnyScript || script.canLaunchInParallel) && canRunScript(script) && checkConditions(script.conditions);
@@ -994,101 +977,42 @@ bool SpeedrunScriptingTools::WndProc(const UINT Message, const WPARAM wParam, LP
     {
         return false;
     }
-    Hotkey pressedKey{};
-    switch (Message) {
-        case WM_KEYDOWN:
-            if (const auto isRepeated = (int)lparam & (1 << 30)) break;
-            [[fallthrough]];
-        case WM_SYSKEYDOWN:
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-            pressedKey.keyData = static_cast<int>(wParam);
-            break;
-        case WM_XBUTTONDOWN:
-        case WM_MBUTTONDOWN:
-        case WM_XBUTTONDBLCLK:
-            if (LOWORD(wParam) & MK_MBUTTON) {
-                pressedKey.keyData = VK_MBUTTON;
-            }
-            if (LOWORD(wParam) & MK_XBUTTON1) {
-                pressedKey.keyData = VK_XBUTTON1;
-            }
-            if (LOWORD(wParam) & MK_XBUTTON2) {
-                pressedKey.keyData = VK_XBUTTON2;
-            }
-            break;
-        case WM_XBUTTONUP:
-        case WM_MBUTTONUP:
-            // leave keydata to none, need to handle special case below
-            break;
-        case WM_MBUTTONDBLCLK:
-            pressedKey.keyData = VK_MBUTTON;
-             break;
-        default:
-            break;
+    const auto key = Hotkeys::PressedKey(Message, wParam, lparam);
+    if (!key) return false;
+    const Hotkey pressedKey{*key, Hotkeys::CurrentModifier()};
+
+    bool triggered = false;
+    if (clearScriptsKey.key && clearScriptsKey == pressedKey) {
+        clear();
+        return true; // Don't set scripts to triggered if we just cleared.
     }
 
-    if (!pressedKey.keyData) return false;
-
-    switch (Message) {
-        case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-        case WM_XBUTTONDOWN:
-        case WM_XBUTTONDBLCLK:
-        case WM_MBUTTONDOWN:
-        case WM_MBUTTONDBLCLK: {
-            if (GetKeyState(VK_CONTROL) < 0) {
-                pressedKey.modifier |= ModKey_Control;
-            }
-            if (GetKeyState(VK_SHIFT) < 0) {
-                pressedKey.modifier |= ModKey_Shift;
-            }
-            if (GetKeyState(VK_MENU) < 0) {
-                pressedKey.modifier |= ModKey_Alt;
+    const auto enableScripts = [alwaysBlockHotkeyKeys = this->alwaysBlockHotkeyKeys, pressedKey, &triggered](std::vector<Script>& scripts) {
+        for (auto& script : scripts) {
+            if (script.enabledToggleHotkey == pressedKey) {
+                if (script.showMessageWhenToggled) logMessage(script.enabled ? std::string{"Disable script "} + script.name : std::string{"Enable script "} + script.name);
+                script.enabled = !script.enabled;
+                triggered = true;
             }
 
-            bool triggered = false;
-            if (clearScriptsKey.keyData && clearScriptsKey == pressedKey) {
-                clear();
-                return true; // Don't set scripts to triggered if we just cleared.
+            if (script.enabled && script.trigger == Trigger::Hotkey && script.triggerData.hotkey == pressedKey && GW::Map::GetInstanceType() != GW::Constants::InstanceType::Loading) {
+                const auto conditionsMet = checkConditions(script.conditions);
+
+                script.triggered = conditionsMet;
+                triggered = conditionsMet || alwaysBlockHotkeyKeys;
             }
-
-            const auto enableScripts = [alwaysBlockHotkeyKeys = this->alwaysBlockHotkeyKeys, pressedKey, &triggered](std::vector<Script>& scripts) {
-                for (auto& script : scripts) {
-                    if (script.enabledToggleHotkey == pressedKey) {
-                        if (script.showMessageWhenToggled) logMessage(script.enabled ? std::string{"Disable script "} + script.name : std::string{"Enable script "} + script.name);
-                        script.enabled = !script.enabled;
-                        triggered = true;
-                    }
-
-                    if (script.enabled && script.trigger == Trigger::Hotkey && script.triggerData.hotkey == pressedKey && GW::Map::GetInstanceType() != GW::Constants::InstanceType::Loading) {
-                        const auto conditionsMet = checkConditions(script.conditions);
-
-                        script.triggered = conditionsMet;
-                        triggered = conditionsMet || alwaysBlockHotkeyKeys;
-                    }
-                }
-            };
-
-            for (auto& group : m_groups) 
-            {
-                if (group.enabled && checkConditions(group.conditions)) 
-                    enableScripts(group.scripts);
-            }
-            enableScripts(m_scripts);
-        
-            if (disabledKeys.contains(pressedKey)) return true;
-            return triggered;
         }
+    };
 
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-
-        case WM_XBUTTONUP:
-        case WM_MBUTTONUP:
-        default:    
-            return false;
+    for (auto& group : m_groups) 
+    {
+        if (group.enabled && checkConditions(group.conditions)) 
+            enableScripts(group.scripts);
     }
+    enableScripts(m_scripts);
+
+    if (disabledKeys.contains(pressedKey)) return true;
+    return triggered;
 }
 
 void SpeedrunScriptingTools::Initialize(ImGuiContext* ctx, ImGuiAllocFns fns, HMODULE toolbox_dll)
@@ -1114,7 +1038,7 @@ void SpeedrunScriptingTools::Initialize(ImGuiContext* ctx, ImGuiAllocFns fns, HM
         struct CooldownStartMessage {
             uint32_t agentId;
             GW::Constants::SkillID skillId;
-            uint32_t always0; // hero ID probably?
+            uint32_t always0;
             float coolDownInSeconds;
         };
 

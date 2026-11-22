@@ -165,7 +165,6 @@ namespace {
                 result += *ms;
             }
             else {
-                // No "." seperator found. Reinterpret as seconds
                 result += *ms * 1000;
             }
         }
@@ -198,7 +197,6 @@ namespace {
         }
         if (conditionToDelete.has_value()) conditions.erase(conditionToDelete.value());
         if (conditionsToSwap.has_value()) std::swap(*conditionsToSwap->first, *conditionsToSwap->second);
-        // Add condition
         if (auto newCondition = drawConditionSelector(200.f)) 
         {
             conditions.push_back(std::move(newCondition));
@@ -392,7 +390,7 @@ namespace {
 
         return result;
     }
-} // namespace
+}
 
 bool GWSplits::drawSplits(std::vector<Split>& splits)
 {
@@ -991,70 +989,10 @@ bool GWSplits::WndProc(const UINT Message, const WPARAM wParam, LPARAM lparam)
     if (GW::Chat::GetIsTyping() || GW::MemoryMgr::GetGWWindowHandle() != GetActiveWindow()) {
         return false;
     }
-    Hotkey pressedKey{};
-    switch (Message) {
-        case WM_KEYDOWN:
-            if (const auto isRepeated = (int)lparam & (1 << 30)) break;
-            [[fallthrough]];
-        case WM_SYSKEYDOWN:
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-            pressedKey.keyData = static_cast<int>(wParam);
-            break;
-        case WM_XBUTTONDOWN:
-        case WM_MBUTTONDOWN:
-        case WM_XBUTTONDBLCLK:
-            if (LOWORD(wParam) & MK_MBUTTON) {
-                pressedKey.keyData = VK_MBUTTON;
-            }
-            if (LOWORD(wParam) & MK_XBUTTON1) {
-                pressedKey.keyData = VK_XBUTTON1;
-            }
-            if (LOWORD(wParam) & MK_XBUTTON2) {
-                pressedKey.keyData = VK_XBUTTON2;
-            }
-            break;
-        case WM_XBUTTONUP:
-        case WM_MBUTTONUP:
-            // leave keydata to none, need to handle special case below
-            break;
-        case WM_MBUTTONDBLCLK:
-            pressedKey.keyData = VK_MBUTTON;
-            break;
-        default:
-            break;
-    }
-
-    if (!pressedKey.keyData) return false;
-
-    switch (Message) {
-        case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-        case WM_XBUTTONDOWN:
-        case WM_XBUTTONDBLCLK:
-        case WM_MBUTTONDOWN:
-        case WM_MBUTTONDBLCLK: {
-            if (GetKeyState(VK_CONTROL) < 0) {
-                pressedKey.modifier |= ModKey_Control;
-            }
-            if (GetKeyState(VK_SHIFT) < 0) {
-                pressedKey.modifier |= ModKey_Shift;
-            }
-            if (GetKeyState(VK_MENU) < 0) {
-                pressedKey.modifier |= ModKey_Alt;
-            }
-
-            return disabledKeys.contains(pressedKey);
-        }
-
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-
-        case WM_XBUTTONUP:
-        case WM_MBUTTONUP:
-        default:
-            return false;
-    }
+    const auto key = Hotkeys::PressedKey(Message, wParam, lparam);
+    if (!key) return false;
+    const Hotkey pressedKey{*key, Hotkeys::CurrentModifier()};
+    return disabledKeys.contains(pressedKey);
 }
 
 void GWSplits::SaveSettings(const wchar_t* folder)
@@ -1121,8 +1059,6 @@ void GWSplits::Initialize(ImGuiContext* ctx, ImGuiAllocFns fns, HMODULE toolbox_
         if (currentRun && isCurrentRunTracked && currentRun->startTime == instanceStart) {
             currentRun->startTime = correctedInstanceStart;
 
-            // TODO correct already completed splits - I'd expect this to be very rare so maybe not bother?
-            // alternatively store completionTime for splits and calculate the rest on the fly
         }
         instanceStart = correctedInstanceStart;
     });
@@ -1142,7 +1078,6 @@ void GWSplits::Initialize(ImGuiContext* ctx, ImGuiAllocFns fns, HMODULE toolbox_
         const auto instance = static_cast<GWSplits*>(ToolboxPluginInstance());
         if (!instance) return;
 
-        // TODO this doesn't reset the current split
         instance->resetRun();
         instanceStart = now();
     });

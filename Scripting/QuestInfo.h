@@ -14,7 +14,6 @@ namespace GW {
     struct Quest;
 }
 
-// Abstracts away the logic of finding and getting the status/name of quests in the quest log
 class QuestInfo {
 public:
     static QuestInfo& getInstance()

@@ -215,7 +215,7 @@ namespace {
         const float health_regen_per_second = agent->max_hp * agent->hp_pips;
         return (int)std::ceil(health_regen_per_second / 2.f); // 1 pip = 2 health per second
     }
-} // namespace
+}
 
 /// ------------- MoveToAction -------------
 MoveToAction::MoveToAction()
@@ -424,7 +424,7 @@ void MoveInchwiseAction::initialAction()
             if (!camera) return player->pos;
 
             const auto forwardsVec = GW::Normalize(removeZ(camera->look_at_target - camera->position));
-            const auto rightVec = GW::Vec2f{forwardsVec.y, -forwardsVec.x}; // Cross product with up vector (0,0,-1)
+            const auto rightVec = GW::Vec2f{forwardsVec.y, -forwardsVec.x};
 
             return player->pos + forward * forwardsVec + right * rightVec;
         }
@@ -668,11 +668,11 @@ void ChangeTargetAction::initialAction()
             case Sorting::ClosestToTarget:
                 return currentTarget
                     ? GW::GetSquareDistance(currentTarget->pos, agent->pos) < GW::GetSquareDistance(currentTarget->pos, currentBestTarget->pos) 
-                    : GW::GetSquareDistance(player->pos, agent->pos) < GW::GetSquareDistance(player->pos, currentBestTarget->pos); // Fallback: Closest to player
+                    : GW::GetSquareDistance(player->pos, agent->pos) < GW::GetSquareDistance(player->pos, currentBestTarget->pos);
             case Sorting::FurthestFromTarget:
                 return currentTarget 
                     ? GW::GetSquareDistance(currentTarget->pos, agent->pos) > GW::GetSquareDistance(currentTarget->pos, currentBestTarget->pos) 
-                    : GW::GetSquareDistance(player->pos, agent->pos) < GW::GetSquareDistance(player->pos, currentBestTarget->pos); // Fallback: Closest to player
+                    : GW::GetSquareDistance(player->pos, agent->pos) < GW::GetSquareDistance(player->pos, currentBestTarget->pos);
             case Sorting::LowestHp:
                 return agent->hp < currentBestTarget->hp;
             case Sorting::HighestHp:
@@ -2598,7 +2598,6 @@ void DropItemAction::initialAction()
     const auto item = FindMatchingItem(id);
     if (!item) return;
 
-    // The GWCA function only drops one item instead of the full stack; TODO figure out why
     GW::GameThread::Enqueue([item]() -> void { GW::Items::DropItem(item, item->quantity); });
 }
 void DropItemAction::drawSettings()

@@ -55,7 +55,7 @@ namespace {
             str.erase(start, end+1);
         }
     }
-} // namespace
+}
 
 void InstanceInfo::initialize()
 {

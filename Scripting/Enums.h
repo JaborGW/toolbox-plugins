@@ -1,8 +1,10 @@
 #pragma once
 
+#include <Hotkeys.h>
+
 #include <cstdint>
 #include <string>
-#include <vector> // For std::hash
+#include <vector>
 
 namespace GW::Constants {
     enum class SkillID : uint32_t;
@@ -70,24 +72,7 @@ inline ActionBehaviourFlags operator|(ActionBehaviourFlag a, ActionBehaviourFlag
     return ActionBehaviourFlags{} | a | b;
 }
 
-struct Hotkey 
-{
-    long keyData = 0;
-    long modifier = 0;
-    bool operator==(const Hotkey&) const = default;
-};
-
-template <>
-struct std::hash<Hotkey> {
-    std::size_t operator()(const Hotkey& key) const
-    {
-        const auto hasher = std::hash<long>{};
-        auto hash = hasher(key.keyData);
-        // Taken from boost::hash_combine
-        hash ^= hasher(key.modifier) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-        return hash;
-    }
-};
+using Hotkey = Hotkeys::Hotkey;
 
 struct TriggerData 
 {
@@ -136,7 +121,6 @@ enum class DoorID : uint32_t {
     // Room 7 Complete = Room 8 open
     // NOTE: Room 8 (failure) to room 10 (scorpion), no door.
     Deep_room_9 = 99887,
-    // Trigger on leviathan?
     Deep_room_11 = 28961,
     // Room 11 door is always open. Use to START room 11 when it comes into range.
 

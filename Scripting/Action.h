@@ -45,7 +45,7 @@ enum class ActionType : int {
     IncrementVariable,
     DecrementVariable,
     MoveItemToSlot,
-    //RotateCharacter,
+    // RotateCharacter, Removed
     KeyboardMove = 39,
     Random,
     AddHero,

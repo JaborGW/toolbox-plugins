@@ -21,7 +21,7 @@ namespace {
             return false;
         return c != '_' && c != '#';
     }
-} // namespace
+}
 
 int InputStream::peek()
 {
@@ -145,7 +145,7 @@ constexpr uint8_t frequentCharValue(char c)
         case '>':
             return FrequentChar::EndOfList;
         default:
-            return 0xFF; // No result
+            return 0xFF;
     }
 }
 
@@ -241,19 +241,16 @@ constexpr std::vector<bool> huffmanEncode(const std::string& str)
         }
     };
     for (char c : str) {
-        // Most common characters, give a short encoding
         if (auto e = encoding(c); !e.empty()) {
             append(std::move(e));
         }
-        // Reasonably frequent characters should at least not bloat length
         else if (const auto f = frequentCharValue(c); f < 64) {
             append({1, 1});
             append(makeBitSequence(f, 6));
         }
-        // Write raw bit representation of least common characters
         else {
             append({1, 0, 1, 1});
-            append(makeBitSequence(c, 8)); // Raw bits
+            append(makeBitSequence(c, 8));
         }
     }
     return result;
@@ -350,7 +347,6 @@ std::string huffmanDecode(std::vector<bool>&& seq)
                     }
                 }
                 else {
-                    // Read 3 bit number starting at 2
                     result += '2' + 4 * seq[index + 3] + 2 * seq[index + 4] + 1 * seq[index + 5];
                     index += 6;
                 }
@@ -374,7 +370,6 @@ std::string huffmanDecode(std::vector<bool>&& seq)
                         index += 4;
                     }
                     else {
-                        // Read raw 8 bit character
                         char raw = 128 * seq[index + 4] + 64 * seq[index + 5] + 32 * seq[index + 6] + 16 * seq[index + 7] + 8 * seq[index + 8] + 4 * seq[index + 9] + 2 * seq[index + 10] + 1 * seq[index + 11];
                         result += raw;
                         index += 12;

@@ -33,7 +33,7 @@ namespace {
     GW::HookEntry QuestAdd_Entry;
     GW::HookEntry InstanceLoadFile_Entry;
     GW::HookEntry UpdateQuestnames_Entry;
-} // namespace
+}
 
 QuestStatus QuestInfo::getMissionObjectiveStatus(uint32_t id) const
 {

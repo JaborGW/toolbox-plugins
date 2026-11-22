@@ -4,7 +4,9 @@
 
 #include <memory>
 
-struct Hotkey;
+#include <Hotkeys.h>
+
+using Hotkey = Hotkeys::Hotkey;
 
 // This struct is append only, do NOT change the ordering of the values or add new ones at any place but the end
 enum class ConditionType : int {
@@ -63,10 +65,9 @@ public:
     virtual ConditionType type() const = 0;
     virtual bool check() const { return true; };
 
-    // @return true iff disabledKey changed. Maybe TODO: Return true if any setting changed; currently not done because it's not used anywhere.
+    // Returns true iff the blocked key changed.
     virtual bool drawSettings() { return false;  }
     virtual void serialize(OutputStream& stream) const { stream << "C" << type(); }
-    // @return Hotkey to block from sending it to GW
     virtual std::vector<Hotkey> disabledKeys() const { return {}; }
 
 protected:

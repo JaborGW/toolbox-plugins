@@ -100,7 +100,7 @@ namespace {
                 return nullptr;
         }
     }
-} // namespace
+}
 
 std::string_view toString(ActionType type)
 {

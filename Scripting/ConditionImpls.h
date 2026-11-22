@@ -249,7 +249,6 @@ public:
 
 private:
     Hotkey shortcut{};
-    std::string description = "Click to change key";
     bool blockKey = false;
 };
 

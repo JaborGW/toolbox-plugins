@@ -18,7 +18,7 @@ namespace GW::Constants
     enum class InstanceType;
     enum class Bag : uint8_t;
     enum HeroID : uint32_t;
-} // namespace GW::Constants
+}
 
 namespace GW::UI 
 {
@@ -54,9 +54,6 @@ std::string_view toString(SkillType);
 std::string_view toString(ObjectiveType);
 
 bool checkWeaponType(WeaponType, uint16_t);
-// @returns true if the hotkey was edited
-bool drawHotkeySelector(Hotkey& hotkey, std::string& description, float selectorWidth);
-std::string makeHotkeyDescription(Hotkey);
 std::string getSkillName(GW::Constants::SkillID id, bool zeroIsAny);
 
 void drawSkillIDSelector(GW::Constants::SkillID& id, bool zeroIsAny = false);

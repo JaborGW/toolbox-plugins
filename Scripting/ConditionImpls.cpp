@@ -126,7 +126,7 @@ namespace {
                 return weapon == EquippedWeaponType::Sword;
             case WeaponRequirement::Ranged:
                 return isRanged(weapon);
-            default: // Melee Attack
+            default:
                 return !isRanged(weapon);
         }
     }
@@ -579,7 +579,7 @@ PlayerHasBuffCondition::PlayerHasBuffCondition(InputStream& stream)
 {
     stream >> id >> minimumDuration >> maximumDuration >> hasMinimumDuration >> hasMaximumDuration;
 
-    // Compatability with old scripts
+    // Compatibility with old scripts
     if (minimumDuration > 0) hasMinimumDuration = true;
     if (maximumDuration > 0) hasMaximumDuration = true;
 }
@@ -995,19 +995,18 @@ bool Deprecated_ObjectiveHasStateCondition::drawSettings()
 /// ------------- KeyIsPressedCondition -------------
 KeyIsPressedCondition::KeyIsPressedCondition(InputStream& stream)
 {
-    stream >> shortcut.keyData >> shortcut.modifier >> blockKey;
-    description = makeHotkeyDescription(shortcut);
+    stream >> shortcut.key >> shortcut.modifier >> blockKey;
 }
 void KeyIsPressedCondition::serialize(OutputStream& stream) const
 {
     Condition::serialize(stream);
 
-    stream << shortcut.keyData << shortcut.modifier << blockKey;
+    stream << shortcut.key << shortcut.modifier << blockKey;
 }
 bool KeyIsPressedCondition::check() const
 {
     if (GW::Chat::GetIsTyping()) return false;
-    bool keyIsPressed = GetAsyncKeyState(shortcut.keyData) & (1 << 15);
+    bool keyIsPressed = GetAsyncKeyState(shortcut.key) & (1 << 15);
     if (shortcut.modifier & ModKey_Control) keyIsPressed &= ImGui::IsKeyDown(ImGuiMod_Ctrl);
     if (shortcut.modifier & ModKey_Shift) keyIsPressed &= ImGui::IsKeyDown(ImGuiMod_Shift);
     if (shortcut.modifier & ModKey_Alt) keyIsPressed &= ImGui::IsKeyDown(ImGuiMod_Alt);
@@ -1020,7 +1019,7 @@ bool KeyIsPressedCondition::drawSettings()
     ImGui::PushID(drawId());
     ImGui::Text("If key is held down:");
     ImGui::SameLine();
-    blockedKeyChanged |= drawHotkeySelector(shortcut, description, 100.f);
+    blockedKeyChanged |= Hotkeys::DrawSelector(shortcut, 100.f, "Click to change key");
     ImGui::SameLine();
     blockedKeyChanged |= ImGui::Checkbox("Block key", &blockKey);
     ImGui::PopID();
@@ -1029,7 +1028,7 @@ bool KeyIsPressedCondition::drawSettings()
 }
 std::vector<Hotkey> KeyIsPressedCondition::disabledKeys() const
 {
-    return (blockKey && shortcut.keyData) ? std::vector{shortcut} : std::vector<Hotkey>{};
+    return (blockKey && shortcut.key) ? std::vector{shortcut} : std::vector<Hotkey>{};
 }
 
 /// ------------- InstanceTimeCondition -------------

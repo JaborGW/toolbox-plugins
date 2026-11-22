@@ -2,12 +2,17 @@
 
 #include <Windows.h>
 
+#include <bitset>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <functional>
+#include <optional>
+#include <string>
+
 #include <Keys.h>
 
 #include <imgui.h>
-
-#include <optional>
-#include <string>
 
 namespace Hotkeys {
     struct Hotkey {
@@ -139,3 +144,14 @@ namespace Hotkeys {
         return changed;
     }
 }
+
+template <>
+struct std::hash<Hotkeys::Hotkey> {
+    std::size_t operator()(const Hotkeys::Hotkey& hotkey) const
+    {
+        const auto hasher = std::hash<long>{};
+        auto hash = hasher(hotkey.key);
+        hash ^= hasher(hotkey.modifier) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        return hash;
+    }
+};

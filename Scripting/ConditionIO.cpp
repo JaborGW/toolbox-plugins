@@ -85,11 +85,6 @@ ConditionPtr makeCondition(ConditionType type)
         case ConditionType::After:
             return std::make_shared<AfterCondition>();
 
-        // Handled differently, we should never run into these here.
-        /* case ConditionType::PlayerHasCharacteristics:
-            return std::make_shared<PlayerHasCharacteristicsCondition>();
-        case ConditionType::TargetHasCharacteristics:
-            return std::make_shared<TargetHasCharacteristicsCondition>();*/
         case ConditionType::AgentWithCharacteristicsCount:
             return std::make_shared<AgentWithCharacteristicsCountCondition>();
 
@@ -199,7 +194,7 @@ std::string_view toString(ConditionType type)
             return "Unknown";
     }
 }
-} // namespace
+}
 
 ConditionPtr readCondition(InputStream& stream)
 {

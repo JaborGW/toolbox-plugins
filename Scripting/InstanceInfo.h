@@ -8,7 +8,6 @@
 #include <chrono>
 #include <unordered_map>
 
-// Contains information about the current instance which either has to be kept between function calls or is expensive to compute
 class InstanceInfo {
 public:
     struct MiniPetStatus {
@@ -29,7 +28,7 @@ public:
     void storeTarget(const GW::AgentLiving* agent, int storageId);
     const GW::AgentLiving* retrieveTarget(int storageId) const;
     bool isStoredTarget(const GW::AgentLiving& agent) const;
-    DoorStatus getDoorStatus(DoorID id) const { return doorStatus.contains(id) ? doorStatus.at(id) : DoorStatus::Closed; } // Add third state "Unknown"?
+    DoorStatus getDoorStatus(DoorID id) const { return doorStatus.contains(id) ? doorStatus.at(id) : DoorStatus::Closed; }
 
     void initialize();
     void terminate();

@@ -56,7 +56,7 @@ namespace {
                 return "";
         }
     }
-} // namespace
+}
 
 CharacteristicPtr makeCharacteristic(CharacteristicType type)
 {

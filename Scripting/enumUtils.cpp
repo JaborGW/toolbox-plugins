@@ -914,72 +914,6 @@ bool checkWeaponType(WeaponType targetType, uint16_t gameType)
     return false;
 }
 
-std::string makeHotkeyDescription(Hotkey hotkey)
-{
-    char newDescription[256];
-    ModKeyName(newDescription, _countof(newDescription), hotkey.modifier, hotkey.keyData);
-    return std::string{newDescription};
-}
-
-bool drawHotkeySelector(Hotkey& hotkey, std::string& description, float selectorWidth)
-{
-    bool keyChanged = false;
-
-    ImGui::PushItemWidth(selectorWidth);
-    if (ImGui::Button(description.c_str())) {
-        ImGui::OpenPopup("Select Hotkey");
-    }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Click to change hotkey");
-    if (ImGui::BeginPopup("Select Hotkey")) {
-        static long newkey = 0;
-        char newkey_buf[256]{};
-        long newmod = 0;
-
-        ImGui::Text("Press key");
-        if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) newmod |= ModKey_Control;
-        if (ImGui::IsKeyDown(ImGuiMod_Shift)) newmod |= ModKey_Shift;
-        if (ImGui::IsKeyDown(ImGuiMod_Alt)) newmod |= ModKey_Alt;
-
-        if (newkey == 0) { // we are looking for the key
-            for (WORD i = 0; i < 512; i++) {
-                switch (i) {
-                    case VK_CONTROL:
-                    case VK_LCONTROL:
-                    case VK_RCONTROL:
-                    case VK_SHIFT:
-                    case VK_LSHIFT:
-                    case VK_RSHIFT:
-                    case VK_MENU:
-                    case VK_LMENU:
-                    case VK_RMENU:
-                    case VK_LBUTTON:
-                    case VK_RBUTTON:
-                        continue;
-                    default: {
-                        if (::GetKeyState(i) & 0x8000) newkey = i;
-                    }
-                }
-            }
-        }
-        else if (!(::GetKeyState(newkey) & 0x8000)) { // We have a key, check if it was released
-            keyChanged = true;
-            hotkey.keyData = newkey;
-            hotkey.modifier = newmod;
-            description = makeHotkeyDescription(hotkey);
-            newkey = 0;
-            ImGui::CloseCurrentPopup();
-        }
-
-        ModKeyName(newkey_buf, _countof(newkey_buf), newmod, newkey);
-        ImGui::Text("%s", newkey_buf);
-
-        ImGui::EndPopup();
-    }
-    ImGui::PopItemWidth();
-
-    return keyChanged;
-}
-
 void drawTriggerSelector(Trigger& trigger, TriggerData& triggerData, [[maybe_unused]] float width)
 {
     if (trigger == Trigger::None) 
@@ -992,14 +926,13 @@ void drawTriggerSelector(Trigger& trigger, TriggerData& triggerData, [[maybe_unu
     }
     else if (trigger == Trigger::Hotkey) 
     {
-        auto description = triggerData.hotkey.keyData ? makeHotkeyDescription(triggerData.hotkey) : "Click to change key";
-        drawHotkeySelector(triggerData.hotkey, description, width - 20.f);
+        Hotkeys::DrawSelector(triggerData.hotkey, width - 20.f, "Click to change key");
         ImGui::SameLine();
         ImGui::Text("Hotkey");
         ImGui::SameLine();
         if (ImGui::Button("X", ImVec2(20.f, 0))) {
             trigger = Trigger::None;
-            triggerData.hotkey.keyData = 0;
+            triggerData.hotkey.key = 0;
             triggerData.hotkey.modifier = 0;
         }
     }
