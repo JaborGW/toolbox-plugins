@@ -1618,7 +1618,7 @@ void PingHardModeAction::initialAction()
     if (!player) return;
 
     if (!Ping_Func) {
-        const auto address = GamePatterns::Find(GamePatterns::Ping);
+        const auto address = GamePatterns::FindPing();
         if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) Ping_Func = (Ping_pt)address;
     }
     if (!Ping_Func) {
@@ -1647,7 +1647,7 @@ void PingTargetAction::initialAction()
     if (!currentTarget) return;
 
     if (!Ping_Func) {
-        const auto address = GamePatterns::Find(GamePatterns::Ping);
+        const auto address = GamePatterns::FindPing();
         if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) Ping_Func = (Ping_pt)address;
     }
     if (!Ping_Func) {

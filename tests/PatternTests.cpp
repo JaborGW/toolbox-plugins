@@ -107,7 +107,15 @@ namespace {
         {"CtoS SendPacket", CheckSendPacket},
         {"CtoS game server object", CheckGameServerObject},
         {"CtoS send dialog opcode", CheckSendDialogOpcode},
-        {"Ping (call target)", [] { return UniqueFunction(GamePatterns::Ping); }},
+        {"Ping (call target)", [] {
+             const GamePatterns::CallTargetPattern call_target;
+             if (!call_target.pattern.bytes) {
+                 return Result{false, "send dialog opcode not found, so the call-target opcode is unknown"};
+             }
+             auto result = UniqueFunction(call_target.pattern);
+             result.detail += ", opcode " + Hex(static_cast<uint8_t>(call_target.bytes[3]));
+             return result;
+         }},
         {"SideWalk", [] { return UniqueFunction(GamePatterns::SideWalk); }},
         {"FindPath", [] { return UniqueFunction(GamePatterns::FindPath); }},
     };

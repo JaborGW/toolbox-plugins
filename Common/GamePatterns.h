@@ -24,8 +24,6 @@ namespace GamePatterns {
 
     constexpr BytePattern SendAgentDialogCaller{"SendAgentDialog caller", "\x89\x4b\x24\x8b\x4b\x28\x83\xe9\x00", "xxxxxxxxx", 0};
     constexpr int send_agent_dialog_call_offset = 0x15;
-    // Matches the call-target sender stub by its opcode (0x23), so it breaks whenever the client renumbers its opcodes.
-    constexpr BytePattern Ping{"Ping (call target)", "\xc7\x45\xf0\x23", "xxxx", -0x22};
     constexpr BytePattern SideWalk{"SideWalk", "\xd9\x46\x04\xd9\x5d\xfc\xd9\x45\x0c\xd9\x45", "xxxxxxxxxx", -0x27};
     constexpr BytePattern FindPath{"FindPath", "\x8b\x5d\x0c\x8b\x7d\x08\x8b\x70\x14\xd9", "xxxxxxxxxx", -0xE};
     constexpr Assertion SendPacket{"CtoS SendPacket", "MsgConn.cpp", "bytes >= sizeof(dword)", -0x67};
@@ -33,6 +31,8 @@ namespace GamePatterns {
 
     constexpr uint32_t interact_gadget_after_send_dialog = 0x16;
     constexpr uint32_t send_signpost_dialog_after_send_dialog = 0x18;
+    constexpr uint32_t call_target_before_send_dialog = 0x18;
+    constexpr int call_target_sender_offset = -0x22;
 
     inline uintptr_t Find(const BytePattern& pattern)
     {
@@ -107,6 +107,32 @@ namespace GamePatterns {
     inline bool IsPlausibleSendDialogOpcode(const uint32_t opcode)
     {
         return opcode >= 0x30 && opcode < 0x60;
+    }
+
+    inline uint32_t SendDialogOpcode()
+    {
+        const auto opcode = ReadSenderOpcode(FindSendDialogSender(FindSendAgentDialog()));
+        return IsPlausibleSendDialogOpcode(opcode) ? opcode : 0;
+    }
+
+    // The call-target (ping) sender stub is found by the opcode it stores at [ebp-0x10], which moves when the client renumbers.
+    struct CallTargetPattern {
+        char bytes[5] = {'\xc7', '\x45', '\xf0', 0, 0};
+        BytePattern pattern{"Ping (call target)", nullptr, "xxxx", call_target_sender_offset};
+
+        CallTargetPattern()
+        {
+            if (const auto send_dialog = SendDialogOpcode()) {
+                bytes[3] = static_cast<char>(send_dialog - call_target_before_send_dialog);
+                pattern.bytes = bytes;
+            }
+        }
+    };
+
+    inline uintptr_t FindPing()
+    {
+        const CallTargetPattern call_target;
+        return call_target.pattern.bytes ? Find(call_target.pattern) : 0;
     }
 
     namespace Gwca {
