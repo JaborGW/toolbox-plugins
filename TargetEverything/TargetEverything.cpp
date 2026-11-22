@@ -3,7 +3,10 @@
 #include <GWCA/Constants/Constants.h>
 #include <GWCA/GameEntities/Agent.h>
 #include <GWCA/Managers/AgentMgr.h>
+#include <GWCA/GameContainers/Array.h>
+#include <GWCA/GameContainers/GamePos.h>
 #include <GWCA/Managers/ChatMgr.h>
+#include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Utilities/Hook.h>
 #include <GWCA/Utilities/Hooker.h>
 
@@ -11,6 +14,7 @@
 
 #include <atomic>
 #include <format>
+#include <string>
 
 DLLAPI ToolboxPlugin* ToolboxPluginInstance()
 {
@@ -88,6 +92,43 @@ namespace {
         GW::Hook::LeaveHook();
         return matches;
     }
+
+    const GW::AgentLiving* NearestRejectedAgent()
+    {
+        const auto agents = GW::Agents::GetAgentArray();
+        const auto me = GW::Agents::GetControlledCharacter();
+        if (!agents || !me) {
+            return nullptr;
+        }
+        const GW::AgentLiving* nearest = nullptr;
+        auto nearest_distance = GW::Constants::SqrRange::Compass;
+        for (const auto agent : *agents) {
+            const auto living = agent ? agent->GetAsAgentLiving() : nullptr;
+            if (!living || living == me || GetAgentMatchesFlags_Ret(living, GW::TargetFilter::AnyLiving)) {
+                continue;
+            }
+            if (const auto distance = GW::GetSquareDistance(me->pos, living->pos); distance < nearest_distance) {
+                nearest = living;
+                nearest_distance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    void TryTargetNearestRejected()
+    {
+        GW::GameThread::Enqueue([](void*) {
+            const auto agent = NearestRejectedAgent();
+            if (!agent) {
+                PluginChat::Write(L"Target Everything", L"No living agent in compass range that the game's filter rejects.");
+                return;
+            }
+            const auto agent_id = agent->agent_id;
+            const auto sent = GW::Agents::ChangeTarget(agent_id);
+            PluginChat::Write(L"Target Everything", std::format(L"Nearest rejected agent: id {}, model {}, allegiance {}. ChangeTarget sent: {}, target now: {}",
+                agent_id, agent->player_number, static_cast<int>(agent->allegiance), sent, GW::Agents::GetTargetId()));
+        });
+    }
 }
 
 void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocator_fns, const HMODULE toolbox_dll)
@@ -99,7 +140,11 @@ void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocat
         hook_status = GW::Hook::CreateHook(&GetAgentMatchesFlags_Func, &OnGetAgentMatchesFlags, &GetAgentMatchesFlags_Ret);
         GW::Hook::EnableHooks(GetAgentMatchesFlags_Func);
     }
-    GW::Chat::CreateCommand(&chat_command_entry, L"targeteverything", [](GW::HookStatus*, const wchar_t*, int, const LPWSTR*) {
+    GW::Chat::CreateCommand(&chat_command_entry, L"targeteverything", [](GW::HookStatus*, const wchar_t*, const int argc, const LPWSTR* argv) {
+        if (argc >= 2 && std::wstring(argv[1]) == L"nearest") {
+            TryTargetNearestRejected();
+            return;
+        }
         PluginChat::Write(L"Target Everything", std::format(L"export found: {}, hook status: {}, filter calls: {}, overridden rejections: {}, last overridden agent: {}",
             GetAgentMatchesFlags_Func != nullptr, hook_status, filter_calls.load(), overridden_rejections.load(), last_overridden_agent.load()));
     });
