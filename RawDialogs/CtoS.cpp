@@ -32,6 +32,7 @@ namespace {
     }
 
     // The client renumbers its outgoing opcodes in some updates (all shifted by one in the 2025-12 client), so read send-dialog's from the game.
+    // Its tail call follows `pop ebp`; the function's first bytes may already be a hook's jump.
     uint32_t ReadSendDialogOpcode()
     {
         const auto send_agent_dialog = reinterpret_cast<const uint8_t*>(DirectDialog::SendAgentDialogFunction());
@@ -39,8 +40,8 @@ namespace {
             return 0;
         }
         const uint8_t* sender = nullptr;
-        for (auto i = 0; i < 0x40 && !sender; ++i) {
-            if (send_agent_dialog[i] == 0xE9) {
+        for (auto i = 1; i < 0x40 && !sender; ++i) {
+            if (send_agent_dialog[i - 1] == 0x5D && send_agent_dialog[i] == 0xE9) {
                 int32_t relative;
                 std::memcpy(&relative, send_agent_dialog + i + 1, sizeof(relative));
                 sender = send_agent_dialog + i + 5 + relative;
