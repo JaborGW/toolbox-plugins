@@ -113,10 +113,12 @@ void DeathPenaltyTimer::Draw(IDirect3DDevice9* device)
     ImGui::SetNextWindowSize(ImVec2(window_size, window_size));
     const auto& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
-    if (ImGui::Begin(Name(), nullptr, GetWinFlags() | ImGuiWindowFlags_NoBackground)) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    if (ImGui::Begin(Name(), nullptr, GetWinFlags() | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar)) {
         ring.Draw(device, std::chrono::duration<float>(since_revive) / duration);
     }
     ImGui::End();
+    ImGui::PopStyleVar();
 }
 
 bool DeathPenaltyTimer::HasEmptySettings() const
