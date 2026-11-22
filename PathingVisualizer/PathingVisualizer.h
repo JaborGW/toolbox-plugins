@@ -25,6 +25,7 @@ public:
 protected:
     const char* Version() const override { return "1.1.0"; }
     bool HasEmptySettings() const override { return visible; }
+    bool HasBackups() const override { return false; }
 
 private:
     bool visible = true;

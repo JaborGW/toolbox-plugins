@@ -56,7 +56,7 @@ public:
     void SaveSettings(const wchar_t* folder) override
     {
         Base::SaveSettings(folder);
-        if (!HasEmptySettings()) {
+        if (HasBackups() && !HasEmptySettings()) {
             PluginBackups::Save(this->GetSettingFile(folder), BackupFolder());
         }
     }
@@ -77,6 +77,8 @@ protected:
     virtual void DrawPluginSettings() {}
 
     [[nodiscard]] virtual const wchar_t* CommandAlias() const { return nullptr; }
+
+    [[nodiscard]] virtual bool HasBackups() const { return true; }
 
     [[nodiscard]] bool HasDefaultWindowSettings() const
         requires std::is_base_of_v<ToolboxUIPlugin, Base>
@@ -134,7 +136,7 @@ private:
 
     void AnnounceRestorableBackups() const
     {
-        if (instance == this && HasEmptySettings() && !Backups().empty()) {
+        if (instance == this && HasBackups() && HasEmptySettings() && !Backups().empty()) {
             Print(L"Settings are empty, but there are backups. Type \"/restore\" to restore the most recent one.");
         }
     }
@@ -166,6 +168,9 @@ private:
 
     bool HandleRestoreCommand(const int argc, const LPWSTR* argv)
     {
+        if (!HasBackups()) {
+            return false;
+        }
         const auto backups = Backups();
         if (argc < 2) {
             if (HasEmptySettings() && !backups.empty()) {
@@ -222,7 +227,7 @@ private:
 
     void DrawBackups()
     {
-        if (settings_folder.empty() || !ImGui::TreeNodeEx("Backups", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+        if (!HasBackups() || settings_folder.empty() || !ImGui::TreeNodeEx("Backups", ImGuiTreeNodeFlags_SpanAvailWidth)) {
             return;
         }
         ImGui::TextDisabled("Also available in chat: /restore %s help", PluginUtils::WStringToString(CommandName()).c_str());
