@@ -14,6 +14,22 @@ target_sources(speedrun_ring_timer INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/RingTimer.cpp")
 target_link_libraries(speedrun_ring_timer INTERFACE directxtexloader)
 
+add_library(speedrun_model_names INTERFACE)
+target_sources(speedrun_model_names INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelNames.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelNames.cpp")
+
+add_library(speedrun_world_renderer INTERFACE)
+target_sources(speedrun_world_renderer INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/WorldRenderer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/WorldRenderer.cpp")
+target_include_directories(speedrun_world_renderer INTERFACE ${EARCUT_HPP_INCLUDE_DIRS})
+
+macro(add_speedrun_world_renderer PLUGIN)
+    target_link_libraries(${PLUGIN} PRIVATE speedrun_world_renderer)
+    add_dependencies(${PLUGIN} compile_shaders)
+endmacro()
+
 macro(add_speedrun_plugin PLUGIN)
     add_library(${PLUGIN} SHARED)
     file(GLOB SOURCES CONFIGURE_DEPENDS
@@ -34,3 +50,6 @@ target_link_libraries(DeathPenaltyTimer PRIVATE speedrun_ring_timer)
 add_speedrun_plugin(Follow)
 add_speedrun_plugin(LeechSignetCancel)
 add_speedrun_plugin(PitsSoulsWindow)
+add_speedrun_plugin(ProjectileIndicator)
+target_link_libraries(ProjectileIndicator PRIVATE speedrun_model_names)
+add_speedrun_world_renderer(ProjectileIndicator)
