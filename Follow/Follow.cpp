@@ -9,7 +9,6 @@
 #include <GWCA/Utilities/Hook.h>
 
 #include <PluginChat.h>
-#include <PluginFooter.h>
 
 #include <imgui.h>
 
@@ -41,17 +40,17 @@ void FollowPlugin::Update(float)
 
 void FollowPlugin::LoadSettings(const wchar_t* folder)
 {
-    ToolboxPlugin::LoadSettings(folder);
+    SpeedrunPlugin::LoadSettings(folder);
     LoadSetting("followDistance", follow_distance);
 }
 
 void FollowPlugin::SaveSettings(const wchar_t* folder)
 {
     SaveSetting("followDistance", follow_distance);
-    ToolboxPlugin::SaveSettings(folder);
+    SpeedrunPlugin::SaveSettings(folder);
 }
 
-void FollowPlugin::DrawSettings()
+void FollowPlugin::DrawPluginSettings()
 {
     ImGui::Text("Usage: Type /follow to activate or deactivate.");
 
@@ -60,8 +59,6 @@ void FollowPlugin::DrawSettings()
     ImGui::SameLine();
     ImGui::InputFloat("inches away", &follow_distance);
     ImGui::PopItemWidth();
-
-    PluginFooter::Draw("1.1.0");
 }
 
 void FollowPlugin::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocator_fns, const HMODULE toolbox_dll)

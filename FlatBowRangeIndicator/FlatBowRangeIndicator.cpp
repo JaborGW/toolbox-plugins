@@ -6,8 +6,6 @@
 #include <GWCA/Managers/AgentMgr.h>
 #include <GWCA/Managers/MapMgr.h>
 
-#include <PluginFooter.h>
-
 #include <imgui.h>
 
 DLLAPI ToolboxPlugin* ToolboxPluginInstance()
@@ -74,10 +72,4 @@ void FlatBowRangeIndicator::Draw(IDirect3DDevice9*)
     }
     ImGui::End();
     ImGui::PopStyleVar();
-}
-
-void FlatBowRangeIndicator::DrawSettings()
-{
-    ToolboxUIPlugin::DrawSettings();
-    PluginFooter::Draw("1.3.0");
 }

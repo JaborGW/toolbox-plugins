@@ -1,7 +1,9 @@
 add_library(speedrun_plugin_common INTERFACE)
 target_sources(speedrun_plugin_common INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginBackups.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginChat.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginFooter.h")
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginFooter.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/SpeedrunPlugin.h")
 target_include_directories(speedrun_plugin_common INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/Common")
 target_link_libraries(speedrun_plugin_common INTERFACE shell32)
 

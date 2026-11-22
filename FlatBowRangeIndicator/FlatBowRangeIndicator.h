@@ -1,10 +1,11 @@
 #pragma once
 
 #include <ToolboxUIPlugin.h>
+#include <SpeedrunPlugin.h>
 
 #include <IconsFontAwesome5.h>
 
-class FlatBowRangeIndicator : public ToolboxUIPlugin {
+class FlatBowRangeIndicator : public SpeedrunPlugin<ToolboxUIPlugin> {
 public:
     FlatBowRangeIndicator();
     ~FlatBowRangeIndicator() override = default;
@@ -12,6 +13,8 @@ public:
     const char* Name() const override { return "FlatBowRangeIndicator"; }
     const char* Icon() const override { return ICON_FA_RAINBOW; }
 
-    void DrawSettings() override;
     void Draw(IDirect3DDevice9* device) override;
+
+protected:
+    const char* Version() const override { return "1.3.0"; }
 };
