@@ -5,6 +5,8 @@
 #include <GWCA/Managers/AgentMgr.h>
 #include <GWCA/Utilities/Hooker.h>
 
+#include <GamePatterns.h>
+
 #include <cstdint>
 #include <cstring>
 
@@ -107,21 +109,16 @@ namespace {
         return matches;
     }
 
-    // GWCA's own change-target check calls the implementation behind the export directly, so hook that instead of the export stub.
     GetAgentMatchesFlags_pt ResolveImplementation(const GetAgentMatchesFlags_pt export_stub)
     {
-        constexpr uint8_t stub_prologue[] = {0x55, 0x89, 0xe5, 0x83, 0xec, 0x18, 0x8b, 0x45, 0x0c, 0x89, 0x44, 0x24, 0x04, 0x8b, 0x45, 0x08, 0x89, 0x04, 0x24, 0xe8};
-        const auto bytes = reinterpret_cast<const uint8_t*>(export_stub);
-        if (std::memcmp(bytes, stub_prologue, sizeof(stub_prologue)) != 0) {
+        const auto implementation = GamePatterns::Gwca::GetAgentMatchesFlagsImplementation(reinterpret_cast<uintptr_t>(export_stub));
+        if (!implementation) {
             return export_stub;
         }
-        int32_t relative;
-        std::memcpy(&relative, bytes + sizeof(stub_prologue), sizeof(relative));
 #ifndef NDEBUG
         hooked_implementation = true;
 #endif
-        const auto call_end = reinterpret_cast<uintptr_t>(bytes) + sizeof(stub_prologue) + sizeof(relative);
-        return reinterpret_cast<GetAgentMatchesFlags_pt>(call_end + relative);
+        return reinterpret_cast<GetAgentMatchesFlags_pt>(implementation);
     }
 
 #ifndef NDEBUG

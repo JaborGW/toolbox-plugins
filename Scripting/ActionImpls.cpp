@@ -1,3 +1,4 @@
+#include <GamePatterns.h>
 #include <ActionImpls.h>
 
 #include <ConditionIO.h>
@@ -1617,7 +1618,7 @@ void PingHardModeAction::initialAction()
     if (!player) return;
 
     if (!Ping_Func) {
-        const auto address = GW::Scanner::Find("\xc7\x45\xf0\x23", "xxxx", -0x22);
+        const auto address = GamePatterns::Find(GamePatterns::Ping);
         if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) Ping_Func = (Ping_pt)address;
     }
     if (!Ping_Func) {
@@ -1646,7 +1647,7 @@ void PingTargetAction::initialAction()
     if (!currentTarget) return;
 
     if (!Ping_Func) {
-        const auto address = GW::Scanner::Find("\xc7\x45\xf0\x23", "xxxx", -0x22);
+        const auto address = GamePatterns::Find(GamePatterns::Ping);
         if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) Ping_Func = (Ping_pt)address;
     }
     if (!Ping_Func) {
@@ -2239,7 +2240,7 @@ void KeyboardMoveAction::initialAction()
 
     if (!SideWalk_Func) 
     {
-        const auto address = GW::Scanner::Find("\xd9\x46\x04\xd9\x5d\xfc\xd9\x45\x0c\xd9\x45", "xxxxxxxxxx", -0x27);
+        const auto address = GamePatterns::Find(GamePatterns::SideWalk);
         if (GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)) SideWalk_Func = (SideWalk_pt)address;
     }
     if (!SideWalk_Func) 

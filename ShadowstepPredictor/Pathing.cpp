@@ -1,3 +1,4 @@
+#include <GamePatterns.h>
 #include "Pathing.h"
 
 #include <GWCA/Constants/Constants.h>
@@ -97,7 +98,7 @@ namespace {
 
 void InitializePathing()
 {
-    FindPath_Func = reinterpret_cast<FindPath_pt>(GW::Scanner::Find("\x8b\x5d\x0c\x8b\x7d\x08\x8b\x70\x14\xd9", "xxxxxxxxxx", -0xE));
+    FindPath_Func = reinterpret_cast<FindPath_pt>(GamePatterns::Find(GamePatterns::FindPath));
 }
 
 const GW::PathingTrapezoid* FindTrapezoid(const GW::GamePos& pos, const GW::PathingMapArray* path_map)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GWCA/Utilities/Scanner.h>
+#include <GamePatterns.h>
 
 #include <cstdint>
 
@@ -9,12 +9,7 @@ namespace DirectDialog {
 
     inline SendAgentDialog_pt SendAgentDialogFunction()
     {
-        static const auto function = [] {
-            const auto address = GW::Scanner::Find("\x89\x4b\x24\x8b\x4b\x28\x83\xe9\x00", "xxxxxxxxx");
-            return GW::Scanner::IsValidPtr(address, GW::ScannerSection::Section_TEXT)
-                ? reinterpret_cast<SendAgentDialog_pt>(GW::Scanner::FunctionFromNearCall(address + 0x15))
-                : nullptr;
-        }();
+        static const auto function = reinterpret_cast<SendAgentDialog_pt>(GamePatterns::FindSendAgentDialog());
         return function;
     }
 

@@ -1,7 +1,9 @@
 add_library(speedrun_plugin_common INTERFACE)
 target_sources(speedrun_plugin_common INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/DirectDialog.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/GwcaExpectations.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/GameIds.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/GamePatterns.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/Hotkeys.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/InstanceProgress.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginBackups.h"
@@ -86,3 +88,14 @@ add_speedrun_plugin(SkinChanger)
 target_link_libraries(SkinChanger PRIVATE speedrun_imgui_stdlib)
 add_speedrun_plugin(Slowload)
 add_speedrun_plugin(TargetEverything)
+
+add_executable(speedrun_pattern_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/PatternTests.cpp")
+target_link_libraries(speedrun_pattern_tests PRIVATE gwca speedrun_plugin_common)
+target_compile_options(speedrun_pattern_tests PRIVATE ${GWTB_EXCEPTIONS})
+target_compile_definitions(speedrun_pattern_tests PRIVATE
+    SPEEDRUN_TEST_GW_EXE=L"${CMAKE_CURRENT_SOURCE_DIR}/test-data/Gw.exe"
+    SPEEDRUN_TEST_GWCA_DLL=L"${PROJECT_SOURCE_DIR}/Dependencies/GWCA/bin/gwca.dll")
+target_link_options(speedrun_pattern_tests PRIVATE -municode -Wl,--image-base,0x10000000)
+set_target_properties(speedrun_pattern_tests PROPERTIES FOLDER "plugins/")
+add_custom_target(run_speedrun_pattern_tests COMMAND $<TARGET_FILE:speedrun_pattern_tests> DEPENDS speedrun_pattern_tests USES_TERMINAL)
+set_target_properties(run_speedrun_pattern_tests PROPERTIES FOLDER "plugins/")
