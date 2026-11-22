@@ -6,8 +6,10 @@
 #include <GWCA/stdlib/GameThreadMgr.h>
 
 #include <cstring>
+#include <Windows.h>
+
 #ifndef NDEBUG
-#include <format>
+#include <Logger.h>
 #endif
 #include <vector>
 
@@ -20,11 +22,20 @@ namespace {
     constexpr uint32_t interact_gadget_after_send_dialog = 0x16;
     constexpr uint32_t send_signpost_dialog_after_send_dialog = 0x18;
 
+    bool IsReadable(const void* address, const size_t size)
+    {
+        MEMORY_BASIC_INFORMATION info{};
+        if (!address || !VirtualQuery(address, &info, sizeof(info)) || info.State != MEM_COMMIT || (info.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
+            return false;
+        }
+        return reinterpret_cast<uintptr_t>(address) + size <= reinterpret_cast<uintptr_t>(info.BaseAddress) + info.RegionSize;
+    }
+
     // The client renumbers its outgoing opcodes in some updates (all shifted by one in the 2025-12 client), so read send-dialog's from the game.
     uint32_t ReadSendDialogOpcode()
     {
         const auto send_agent_dialog = reinterpret_cast<const uint8_t*>(DirectDialog::SendAgentDialogFunction());
-        if (!send_agent_dialog) {
+        if (!IsReadable(send_agent_dialog, 0x45)) {
             return 0;
         }
         const uint8_t* sender = nullptr;
@@ -35,7 +46,7 @@ namespace {
                 sender = send_agent_dialog + i + 5 + relative;
             }
         }
-        if (!sender) {
+        if (!IsReadable(sender, 0x37)) {
             return 0;
         }
         for (auto i = 0; i < 0x30; ++i) {
@@ -61,8 +72,9 @@ namespace CtoS {
             return true;
         }
         SendPacket_Func = reinterpret_cast<SendPacket_pt>(GW::Scanner::FindAssertion("MsgConn.cpp", "bytes >= sizeof(dword)", 0, -0x67));
-        if (const auto address = GW::Scanner::FindAssertion("GcGameCmd.cpp", "No valid case for switch variable 'code'", 0, -0x32)) {
-            game_server_object_address = *reinterpret_cast<uintptr_t*>(address);
+        if (const auto address = GW::Scanner::FindAssertion("GcGameCmd.cpp", "No valid case for switch variable 'code'", 0, -0x32); IsReadable(reinterpret_cast<const void*>(address), sizeof(uintptr_t))) {
+            const auto object_address = *reinterpret_cast<const uintptr_t*>(address);
+            game_server_object_address = IsReadable(reinterpret_cast<const void*>(object_address), sizeof(uint32_t)) ? object_address : 0;
         }
         if (const auto send_dialog = ReadSendDialogOpcode(); send_dialog >= 0x30 && send_dialog < 0x60) {
             opcodes = {send_dialog, send_dialog + interact_gadget_after_send_dialog, send_dialog + send_signpost_dialog_after_send_dialog};
@@ -81,17 +93,18 @@ namespace CtoS {
     }
 
 #ifndef NDEBUG
-    std::wstring Describe()
+    void LogDiagnostics()
     {
+        Log::Log("[RawDialog] send fn 0x%X, assertion 0x%X", reinterpret_cast<uintptr_t>(SendPacket_Func), GW::Scanner::FindAssertion("MsgConn.cpp", "bytes >= sizeof(dword)", 0, 0));
+        Log::Log("[RawDialog] server object 0x%X, assertion 0x%X", game_server_object_address, GW::Scanner::FindAssertion("GcGameCmd.cpp", "No valid case for switch variable 'code'", 0, 0));
         const auto send_agent_dialog = reinterpret_cast<const uint8_t*>(DirectDialog::SendAgentDialogFunction());
-        std::wstring first_bytes;
-        for (auto i = 0; send_agent_dialog && i < 8; ++i) {
-            first_bytes += std::format(L"{:02X} ", send_agent_dialog[i]);
+        if (!IsReadable(send_agent_dialog, 0x40)) {
+            Log::Log("[RawDialog] SendAgentDialog 0x%X not readable", reinterpret_cast<uintptr_t>(send_agent_dialog));
+            return;
         }
-        return std::format(L"send fn 0x{:X} (assertion 0x{:X}), server object ptr 0x{:X} (assertion 0x{:X}), send dialog opcode 0x{:X}, SendAgentDialog 0x{:X} starts {}",
-            reinterpret_cast<uintptr_t>(SendPacket_Func), GW::Scanner::FindAssertion("MsgConn.cpp", "bytes >= sizeof(dword)", 0, 0),
-            game_server_object_address, GW::Scanner::FindAssertion("GcGameCmd.cpp", "No valid case for switch variable 'code'", 0, 0),
-            ReadSendDialogOpcode(), reinterpret_cast<uintptr_t>(send_agent_dialog), first_bytes);
+        Log::Log("[RawDialog] SendAgentDialog 0x%X: %02X %02X %02X %02X %02X %02X %02X %02X", reinterpret_cast<uintptr_t>(send_agent_dialog),
+            send_agent_dialog[0], send_agent_dialog[1], send_agent_dialog[2], send_agent_dialog[3], send_agent_dialog[4], send_agent_dialog[5], send_agent_dialog[6], send_agent_dialog[7]);
+        Log::Log("[RawDialog] send dialog opcode 0x%X", ReadSendDialogOpcode());
     }
 #endif
 

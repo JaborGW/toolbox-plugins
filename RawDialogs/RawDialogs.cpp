@@ -78,7 +78,8 @@ namespace {
         if (!CtoS::Initialize()) {
             PluginChat::Write(L"RawDialog", L"Packet sending was not found for this game client; /openchest does not work.");
 #ifndef NDEBUG
-            PluginChat::Write(L"RawDialog", CtoS::Describe());
+            CtoS::LogDiagnostics();
+            PluginChat::Write(L"RawDialog", L"Debug details written to log.txt.");
 #endif
             return;
         }
