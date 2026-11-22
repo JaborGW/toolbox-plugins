@@ -3,7 +3,14 @@
 #include <GWCA/Constants/Constants.h>
 #include <GWCA/GameEntities/Agent.h>
 #include <GWCA/Managers/AgentMgr.h>
+#include <GWCA/Managers/ChatMgr.h>
+#include <GWCA/Utilities/Hook.h>
 #include <GWCA/Utilities/Hooker.h>
+
+#include <PluginChat.h>
+
+#include <atomic>
+#include <format>
 
 DLLAPI ToolboxPlugin* ToolboxPluginInstance()
 {
@@ -16,6 +23,11 @@ namespace {
     using GetAgentMatchesFlags_pt = bool(__cdecl*)(const GW::Agent* agent, AgentTargetFlags flags) noexcept;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Func = nullptr;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Ret = nullptr;
+    int hook_status = -1;
+    std::atomic<uint32_t> filter_calls = 0;
+    std::atomic<uint32_t> overridden_rejections = 0;
+    std::atomic<uint32_t> last_overridden_agent = 0;
+    GW::HookEntry chat_command_entry;
 
     struct LivingCategory {
         AgentTargetFlags include;
@@ -66,7 +78,13 @@ namespace {
     bool __cdecl OnGetAgentMatchesFlags(const GW::Agent* agent, const AgentTargetFlags flags) noexcept
     {
         GW::Hook::EnterHook();
-        const auto matches = GetAgentMatchesFlags_Ret(agent, flags) || (agent && MatchesIgnoringTargetability(agent, flags));
+        ++filter_calls;
+        auto matches = GetAgentMatchesFlags_Ret(agent, flags);
+        if (!matches && agent && MatchesIgnoringTargetability(agent, flags)) {
+            matches = true;
+            ++overridden_rejections;
+            last_overridden_agent = agent->agent_id;
+        }
         GW::Hook::LeaveHook();
         return matches;
     }
@@ -78,14 +96,19 @@ void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocat
     const auto gwca = GetModuleHandleW(L"gwca.dll");
     GetAgentMatchesFlags_Func = gwca ? reinterpret_cast<GetAgentMatchesFlags_pt>(GetProcAddress(gwca, "GW_Agents_GetAgentMatchesFlags")) : nullptr;
     if (GetAgentMatchesFlags_Func) {
-        GW::Hook::CreateHook(&GetAgentMatchesFlags_Func, &OnGetAgentMatchesFlags, &GetAgentMatchesFlags_Ret);
+        hook_status = GW::Hook::CreateHook(&GetAgentMatchesFlags_Func, &OnGetAgentMatchesFlags, &GetAgentMatchesFlags_Ret);
         GW::Hook::EnableHooks(GetAgentMatchesFlags_Func);
     }
+    GW::Chat::CreateCommand(&chat_command_entry, L"targeteverything", [](GW::HookStatus*, const wchar_t*, int, const LPWSTR*) {
+        PluginChat::Write(L"Target Everything", std::format(L"export found: {}, hook status: {}, filter calls: {}, overridden rejections: {}, last overridden agent: {}",
+            GetAgentMatchesFlags_Func != nullptr, hook_status, filter_calls.load(), overridden_rejections.load(), last_overridden_agent.load()));
+    });
 }
 
 void TargetEverything::SignalTerminate()
 {
     ToolboxPlugin::SignalTerminate();
+    GW::Chat::DeleteCommand(&chat_command_entry, L"targeteverything");
     if (GetAgentMatchesFlags_Func) {
         GW::Hook::DisableHooks(GetAgentMatchesFlags_Func);
         GW::Hook::RemoveHook(GetAgentMatchesFlags_Func);
