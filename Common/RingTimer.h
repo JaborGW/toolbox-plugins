@@ -34,8 +34,6 @@ public:
         visit("BorderColorR", color.x);
         visit("BorderColorG", color.y);
         visit("BorderColorB", color.z);
-        visit("offsetX", offset.x);
-        visit("offsetY", offset.y);
         visit("showIcon", show_icon);
         visit("showText", show_text);
         visit("showCircle", show_circle);
@@ -55,7 +53,6 @@ private:
 
     float radius = default_radius;
     ImVec4 color;
-    ImVec2 offset = {0.f, 0.f};
     bool show_icon = true;
     bool show_text = false;
     bool show_circle = true;

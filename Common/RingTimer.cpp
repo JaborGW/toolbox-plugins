@@ -89,7 +89,7 @@ void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
         draw_list->PathStroke(ImGui::ColorConvertFloat4ToU32(color), false, thickness);
     }
 
-    const auto content_center = (size + thickness) * 0.5f + offset;
+    const auto content_center = (size + thickness) * 0.5f;
     const auto draw_icon = show_icon && texture;
     const auto image_size = icon.sizes[image_size_index];
     auto icon_top = content_center.y - image_size.y * icon.centering;
@@ -127,7 +127,6 @@ void RingTimer::DrawSettings()
     constexpr const char* size_names[] = {"Small", "Medium", "Large", "Very large"};
     ImGui::Combo("Icon size", &image_size_index, size_names, 4);
     ImGui::Combo("Text size", &font_size_index, size_names, 3);
-    ImGui::InputFloat2("Center content Offset", &offset.x);
     ImGui::Text("Show:");
     ImGui::SameLine();
     ImGui::Checkbox("Icon", &show_icon);
@@ -142,6 +141,6 @@ void RingTimer::DrawSettings()
 bool RingTimer::HasDefaultSettings() const
 {
     return radius == default_radius && color.x == default_color.x && color.y == default_color.y && color.z == default_color.z
-        && offset.x == 0.f && offset.y == 0.f && show_icon && !show_text && show_circle && show_background
+        && show_icon && !show_text && show_circle && show_background
         && font_size_index == 1 && image_size_index == 1;
 }
