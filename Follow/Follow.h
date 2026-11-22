@@ -24,8 +24,10 @@ public:
 
 protected:
     const char* Version() const override { return "1.1.0"; }
+    bool HasEmptySettings() const override { return follow_distance == default_follow_distance; }
     void DrawPluginSettings() override;
 
 private:
-    float follow_distance = 200.f;
+    static constexpr float default_follow_distance = 200.f;
+    float follow_distance = default_follow_distance;
 };

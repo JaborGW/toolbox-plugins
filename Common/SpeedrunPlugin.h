@@ -8,6 +8,7 @@
 #include <PluginFooter.h>
 
 #include <GWCA/Managers/ChatMgr.h>
+#include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Utilities/Hook.h>
 
 #include <Windows.h>
@@ -42,16 +43,17 @@ public:
     {
         settings_folder = folder;
         Base::LoadSettings(folder);
-        std::error_code ec;
-        if (!std::filesystem::exists(this->GetSettingFile(folder), ec) && !Backups().empty()) {
-            Print(std::format(L"No settings found, but there are backups. Type \"/restore {} help\" to see how to restore them.", CommandName()));
-        }
+        GW::GameThread::Enqueue([](void* context) {
+            static_cast<SpeedrunPlugin*>(context)->AnnounceRestorableBackups();
+        }, this);
     }
 
     void SaveSettings(const wchar_t* folder) override
     {
         Base::SaveSettings(folder);
-        PluginBackups::Save(this->GetSettingFile(folder), BackupFolder());
+        if (!HasEmptySettings()) {
+            PluginBackups::Save(this->GetSettingFile(folder), BackupFolder());
+        }
     }
 
     void DrawSettings() final
@@ -64,6 +66,8 @@ public:
 
 protected:
     [[nodiscard]] virtual const char* Version() const = 0;
+
+    [[nodiscard]] virtual bool HasEmptySettings() const = 0;
 
     virtual void DrawPluginSettings() {}
 
@@ -98,10 +102,19 @@ private:
             PluginUtils::StringToWString(PluginBackups::FormatLocalTime(backup.last_write)), backup.size);
     }
 
+    void AnnounceRestorableBackups() const
+    {
+        if (instance == this && HasEmptySettings() && !Backups().empty()) {
+            Print(L"Settings are empty, but there are backups. Type \"/restore\" to restore the most recent one.");
+        }
+    }
+
     void Restore(const PluginBackups::Backup& backup)
     {
         const auto settings_file = this->GetSettingFile(settings_folder.c_str());
-        PluginBackups::Save(settings_file, BackupFolder());
+        if (!HasEmptySettings()) {
+            PluginBackups::Save(settings_file, BackupFolder());
+        }
         if (!PluginBackups::Restore(backup, settings_file)) {
             Print(L"Failed to restore " + Describe(backup));
             return;
@@ -118,14 +131,15 @@ private:
         Print(std::format(L"Type \"/restore {} list\" to show the available backups", name));
         Print(std::format(L"Type \"/restore {} $NUMBER\" to restore a specific backup", name));
         Print(std::format(L"Type \"/restore {} help\" to show this menu", name));
+        Print(L"Type \"/restore\" to restore the most recent backup of every plugin whose settings are empty");
     }
 
     bool HandleRestoreCommand(const int argc, const LPWSTR* argv)
     {
         const auto backups = Backups();
         if (argc < 2) {
-            if (!backups.empty()) {
-                Print(std::format(L"{} backups available. Type \"/restore {} help\" for options.", backups.size(), CommandName()));
+            if (HasEmptySettings() && !backups.empty()) {
+                Restore(backups.front());
             }
             return false;
         }

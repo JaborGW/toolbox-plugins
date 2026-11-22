@@ -46,6 +46,12 @@ FlatBowRangeIndicator::FlatBowRangeIndicator()
     show_menubutton = false;
 }
 
+bool FlatBowRangeIndicator::HasEmptySettings() const
+{
+    const auto visible = const_cast<FlatBowRangeIndicator*>(this)->GetVisiblePtr();
+    return (!visible || *visible) && !lock_move && !lock_size && !show_closebutton && !show_menubutton && !show_title;
+}
+
 void FlatBowRangeIndicator::Draw(IDirect3DDevice9*)
 {
     if (!GetVisiblePtr() || !*GetVisiblePtr()) {
