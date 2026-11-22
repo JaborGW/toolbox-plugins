@@ -6,6 +6,9 @@
 #include <GWCA/stdlib/GameThreadMgr.h>
 
 #include <cstring>
+#ifndef NDEBUG
+#include <format>
+#endif
 #include <vector>
 
 namespace {
@@ -76,6 +79,21 @@ namespace CtoS {
     {
         return opcodes;
     }
+
+#ifndef NDEBUG
+    std::wstring Describe()
+    {
+        const auto send_agent_dialog = reinterpret_cast<const uint8_t*>(DirectDialog::SendAgentDialogFunction());
+        std::wstring first_bytes;
+        for (auto i = 0; send_agent_dialog && i < 8; ++i) {
+            first_bytes += std::format(L"{:02X} ", send_agent_dialog[i]);
+        }
+        return std::format(L"send fn 0x{:X} (assertion 0x{:X}), server object ptr 0x{:X} (assertion 0x{:X}), send dialog opcode 0x{:X}, SendAgentDialog 0x{:X} starts {}",
+            reinterpret_cast<uintptr_t>(SendPacket_Func), GW::Scanner::FindAssertion("MsgConn.cpp", "bytes >= sizeof(dword)", 0, 0),
+            game_server_object_address, GW::Scanner::FindAssertion("GcGameCmd.cpp", "No valid case for switch variable 'code'", 0, 0),
+            ReadSendDialogOpcode(), reinterpret_cast<uintptr_t>(send_agent_dialog), first_bytes);
+    }
+#endif
 
     bool Send(const std::initializer_list<uint32_t> packet)
     {

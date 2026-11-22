@@ -2,6 +2,9 @@
 
 #include <cstdint>
 #include <initializer_list>
+#ifndef NDEBUG
+#include <string>
+#endif
 
 namespace CtoS {
     struct Opcodes {
@@ -14,4 +17,7 @@ namespace CtoS {
     bool IsInitialized();
     const Opcodes& GetOpcodes();
     bool Send(std::initializer_list<uint32_t> packet);
+#ifndef NDEBUG
+    std::wstring Describe();
+#endif
 }
