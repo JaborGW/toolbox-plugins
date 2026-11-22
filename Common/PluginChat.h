@@ -1,7 +1,7 @@
 #pragma once
 
-#include <GWCA/Managers/ChatMgr.h>
-#include <GWCA/Managers/GameThreadMgr.h>
+#include <GWCA/stdlib/ChatMgr.h>
+#include <GWCA/stdlib/GameThreadMgr.h>
 
 #include <format>
 #include <memory>

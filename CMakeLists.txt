@@ -3,6 +3,7 @@ target_sources(speedrun_plugin_common INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/DirectDialog.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/GameIds.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/Hotkeys.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/InstanceProgress.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginBackups.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginChat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginFooter.h"
@@ -33,6 +34,14 @@ target_sources(speedrun_imgui_stdlib INTERFACE
     "${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.h"
     "${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp")
 
+file(GLOB SCRIPTING_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/Scripting/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Scripting/*.cpp")
+add_library(speedrun_scripting INTERFACE)
+target_sources(speedrun_scripting INTERFACE ${SCRIPTING_SOURCES})
+target_include_directories(speedrun_scripting INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/Scripting")
+target_link_libraries(speedrun_scripting INTERFACE speedrun_model_names speedrun_imgui_stdlib)
+
 macro(add_speedrun_world_renderer PLUGIN)
     target_link_libraries(${PLUGIN} PRIVATE speedrun_world_renderer)
     add_dependencies(${PLUGIN} compile_shaders)
@@ -54,6 +63,10 @@ add_speedrun_plugin(AgentPopTimer)
 target_link_libraries(AgentPopTimer PRIVATE speedrun_ring_timer)
 add_speedrun_plugin(DialogsWindow)
 add_speedrun_plugin(FlatBowRangeIndicator)
+add_speedrun_plugin(GWSplits)
+target_link_libraries(GWSplits PRIVATE speedrun_scripting)
+target_compile_options(GWSplits PRIVATE ${GWTB_EXCEPTIONS})
+target_compile_definitions(GWSplits PRIVATE LiveSplitMode)
 add_speedrun_plugin(DeathPenaltyTimer)
 target_link_libraries(DeathPenaltyTimer PRIVATE speedrun_ring_timer)
 add_speedrun_plugin(Follow)
@@ -66,6 +79,9 @@ target_link_libraries(ProjectileIndicator PRIVATE speedrun_model_names)
 add_speedrun_world_renderer(ProjectileIndicator)
 add_speedrun_plugin(RawDialogs)
 add_speedrun_plugin(ShadowstepPredictor)
+add_speedrun_plugin(SpeedrunScriptingTools)
+target_link_libraries(SpeedrunScriptingTools PRIVATE speedrun_scripting)
+target_compile_options(SpeedrunScriptingTools PRIVATE ${GWTB_EXCEPTIONS})
 add_speedrun_plugin(SkinChanger)
 target_link_libraries(SkinChanger PRIVATE speedrun_imgui_stdlib)
 add_speedrun_plugin(Slowload)

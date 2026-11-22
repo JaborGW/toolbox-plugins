@@ -1,6 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 namespace GameIds {
+    constexpr uint32_t SkillIdCount = 3440;
+
     namespace ItemID {
         constexpr int GuildLord = 36648;
         constexpr int HighPriestZhang = 36649;
