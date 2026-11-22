@@ -2,6 +2,7 @@ add_library(speedrun_plugin_common INTERFACE)
 target_sources(speedrun_plugin_common INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/DirectDialog.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/GameIds.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/Hotkeys.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginBackups.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginChat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginFooter.h"
@@ -58,4 +59,5 @@ target_link_libraries(ProjectileIndicator PRIVATE speedrun_model_names)
 add_speedrun_world_renderer(ProjectileIndicator)
 add_speedrun_plugin(RawDialogs)
 add_speedrun_plugin(ShadowstepPredictor)
+add_speedrun_plugin(Slowload)
 add_speedrun_plugin(TargetEverything)
