@@ -60,7 +60,7 @@ public:
     void handleTrigger(Trigger triggerType, std::function<bool(const Split&)> extraConditions = [](const Split&) { return true; });
 
 protected:
-    const char* Version() const override { return "1.4.0"; }
+    const char* Version() const override { return "1.5.0"; }
     bool HasEmptySettings() const override { return runs.empty(); }
     void DrawPluginSettings() override;
 

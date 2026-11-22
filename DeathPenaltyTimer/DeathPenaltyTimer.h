@@ -24,7 +24,7 @@ public:
     void Terminate() override;
 
 protected:
-    const char* Version() const override { return "1.2.0"; }
+    const char* Version() const override { return "1.3.0"; }
     bool HasEmptySettings() const override;
     void DrawPluginSettings() override { ring.DrawSettings(); }
 

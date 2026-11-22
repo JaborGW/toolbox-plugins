@@ -25,7 +25,7 @@ public:
     void SaveSettings(const wchar_t*) override;
 
 protected:
-    const char* Version() const override { return "1.3.0"; }
+    const char* Version() const override { return "1.4.0"; }
     bool HasEmptySettings() const override;
     std::vector<std::wstring> UnavailableFeatures() const override;
     void DrawPluginSettings() override;

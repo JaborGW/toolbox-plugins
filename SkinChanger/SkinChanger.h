@@ -60,7 +60,7 @@ public:
     void Update(float) override;
 
 protected:
-    const char* Version() const override { return "1.2.0"; }
+    const char* Version() const override { return "1.3.0"; }
     bool HasEmptySettings() const override { return item_changes.empty() && minipet_transmogs.empty(); }
     void DrawPluginSettings() override;
 

@@ -24,7 +24,7 @@ public:
     void SignalTerminate() override;
 
 protected:
-    const char* Version() const override { return "1.1.0"; }
+    const char* Version() const override { return "1.2.0"; }
     bool HasEmptySettings() const override { return shortcut.key == 0; }
     void DrawPluginSettings() override;
 

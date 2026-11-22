@@ -29,7 +29,7 @@ public:
     void Draw(IDirect3DDevice9* device) override;
 
 protected:
-    const char* Version() const override { return "1.3.0"; }
+    const char* Version() const override { return "1.4.0"; }
     bool HasEmptySettings() const override;
     void DrawPluginSettings() override;
 

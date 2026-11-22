@@ -23,7 +23,7 @@ public:
     void Update(float) override;
 
 protected:
-    const char* Version() const override { return "1.1.0"; }
+    const char* Version() const override { return "1.2.0"; }
     bool HasEmptySettings() const override { return visible; }
     bool HasBackups() const override { return false; }
 
