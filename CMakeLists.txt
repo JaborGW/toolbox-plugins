@@ -19,3 +19,4 @@ endmacro()
 
 add_speedrun_plugin(FlatBowRangeIndicator)
 add_speedrun_plugin(Follow)
+add_speedrun_plugin(LeechSignetCancel)
