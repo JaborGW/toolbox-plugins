@@ -7,6 +7,12 @@ target_sources(speedrun_plugin_common INTERFACE
 target_include_directories(speedrun_plugin_common INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/Common")
 target_link_libraries(speedrun_plugin_common INTERFACE shell32)
 
+add_library(speedrun_ring_timer INTERFACE)
+target_sources(speedrun_ring_timer INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/RingTimer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/RingTimer.cpp")
+target_link_libraries(speedrun_ring_timer INTERFACE directxtexloader)
+
 macro(add_speedrun_plugin PLUGIN)
     add_library(${PLUGIN} SHARED)
     file(GLOB SOURCES CONFIGURE_DEPENDS
@@ -20,5 +26,7 @@ macro(add_speedrun_plugin PLUGIN)
 endmacro()
 
 add_speedrun_plugin(FlatBowRangeIndicator)
+add_speedrun_plugin(DeathPenaltyTimer)
+target_link_libraries(DeathPenaltyTimer PRIVATE speedrun_ring_timer)
 add_speedrun_plugin(Follow)
 add_speedrun_plugin(LeechSignetCancel)
