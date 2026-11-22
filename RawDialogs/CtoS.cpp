@@ -100,11 +100,13 @@ namespace CtoS {
         const auto send_agent_dialog = reinterpret_cast<const uint8_t*>(DirectDialog::SendAgentDialogFunction());
         if (!IsReadable(send_agent_dialog, 0x40)) {
             Log::Log("[RawDialog] SendAgentDialog 0x%X not readable", reinterpret_cast<uintptr_t>(send_agent_dialog));
+            Log::FlushFile();
             return;
         }
         Log::Log("[RawDialog] SendAgentDialog 0x%X: %02X %02X %02X %02X %02X %02X %02X %02X", reinterpret_cast<uintptr_t>(send_agent_dialog),
             send_agent_dialog[0], send_agent_dialog[1], send_agent_dialog[2], send_agent_dialog[3], send_agent_dialog[4], send_agent_dialog[5], send_agent_dialog[6], send_agent_dialog[7]);
         Log::Log("[RawDialog] send dialog opcode 0x%X", ReadSendDialogOpcode());
+        Log::FlushFile();
     }
 #endif
 
