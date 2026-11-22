@@ -74,7 +74,7 @@ namespace {
 }
 
 DeathPenaltyTimer::DeathPenaltyTimer()
-    : ring({0.925f, 0.11f, 0.141f, 1.f}, 15.f, {death_penalty_icon_png, {ImVec2(16, 28), {27, 46}, {32, 55}, {39, 58}}, 0.5f})
+    : ring({0.925f, 0.11f, 0.141f, 1.f}, 15.f, {death_penalty_icon_png, {ImVec2(16, 28), {27, 46}, {32, 55}, {39, 58}}})
 {
     show_closebutton = false;
     show_title = false;
@@ -109,16 +109,7 @@ void DeathPenaltyTimer::Draw(IDirect3DDevice9* device)
         return;
     }
 
-    const auto window_size = 2 * ring.Radius() + ring.Thickness();
-    ImGui::SetNextWindowSize(ImVec2(window_size, window_size));
-    const auto& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    if (ImGui::Begin(Name(), nullptr, GetWinFlags() | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar)) {
-        ring.Draw(device, std::chrono::duration<float>(since_revive) / duration);
-    }
-    ImGui::End();
-    ImGui::PopStyleVar();
+    ring.DrawWindow(Name(), GetWinFlags(), device, std::chrono::duration<float>(since_revive) / duration);
 }
 
 bool DeathPenaltyTimer::HasEmptySettings() const

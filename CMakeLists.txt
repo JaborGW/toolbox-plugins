@@ -1,5 +1,6 @@
 add_library(speedrun_plugin_common INTERFACE)
 target_sources(speedrun_plugin_common INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/GameIds.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginBackups.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginChat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/PluginFooter.h"
@@ -25,6 +26,8 @@ macro(add_speedrun_plugin PLUGIN)
     target_link_libraries(${PLUGIN} PRIVATE speedrun_plugin_common)
 endmacro()
 
+add_speedrun_plugin(AgentPopTimer)
+target_link_libraries(AgentPopTimer PRIVATE speedrun_ring_timer)
 add_speedrun_plugin(FlatBowRangeIndicator)
 add_speedrun_plugin(DeathPenaltyTimer)
 target_link_libraries(DeathPenaltyTimer PRIVATE speedrun_ring_timer)

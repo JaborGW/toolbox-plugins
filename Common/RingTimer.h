@@ -14,17 +14,14 @@ public:
     struct Icon {
         std::span<const uint8_t> png;
         std::array<ImVec2, 4> sizes;
-        float centering;
     };
 
     RingTimer(ImVec4 default_color, float duration_seconds, Icon icon);
 
-    void Draw(IDirect3DDevice9* device, float elapsed_portion);
+    void DrawWindow(const char* name, ImGuiWindowFlags flags, IDirect3DDevice9* device, float elapsed_portion);
     void DrawSettings();
     void ReleaseTexture();
 
-    [[nodiscard]] float Radius() const { return radius; }
-    [[nodiscard]] float Thickness() const { return radius / 5; }
     [[nodiscard]] bool HasDefaultSettings() const;
 
     template <typename Visitor>
@@ -46,6 +43,8 @@ private:
     static constexpr float default_radius = 50.f;
 
     void LoadTexture(IDirect3DDevice9* device);
+    void Draw(IDirect3DDevice9* device, float elapsed_portion);
+    [[nodiscard]] float Thickness() const { return radius / 5; }
 
     ImVec4 default_color;
     float duration_seconds;

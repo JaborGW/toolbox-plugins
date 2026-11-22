@@ -51,6 +51,20 @@ void RingTimer::ReleaseTexture()
     texture_loading_failed = false;
 }
 
+void RingTimer::DrawWindow(const char* name, const ImGuiWindowFlags flags, IDirect3DDevice9* device, const float elapsed_portion)
+{
+    const auto window_size = 2 * radius + Thickness();
+    ImGui::SetNextWindowSize(ImVec2(window_size, window_size));
+    const auto& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    if (ImGui::Begin(name, nullptr, flags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar)) {
+        Draw(device, elapsed_portion);
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+}
+
 void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
 {
     LoadTexture(device);
@@ -92,7 +106,7 @@ void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
     const auto content_center = (size + thickness) * 0.5f;
     const auto draw_icon = show_icon && texture;
     const auto image_size = icon.sizes[image_size_index];
-    auto icon_top = content_center.y - image_size.y * icon.centering;
+    auto icon_top = content_center.y - image_size.y * 0.5f;
 
     if (show_text) {
         const auto deciseconds = static_cast<int>(duration_seconds * 10 * (1.f - elapsed_portion));
@@ -115,7 +129,7 @@ void RingTimer::Draw(IDirect3DDevice9* device, const float elapsed_portion)
     }
 
     if (draw_icon) {
-        ImGui::SetCursorPos(ImVec2(content_center.x - image_size.x * icon.centering, icon_top));
+        ImGui::SetCursorPos(ImVec2(content_center.x - image_size.x * 0.5f, icon_top));
         ImGui::Image(reinterpret_cast<ImTextureID>(texture), image_size);
     }
 }
