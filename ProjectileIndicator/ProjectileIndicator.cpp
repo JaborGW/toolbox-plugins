@@ -201,7 +201,7 @@ void ProjectileIndicator::DrawPluginSettings()
 
 bool ProjectileIndicator::HasEmptySettings() const
 {
-    return filled && projectile_timer == default_projectile_timer
+    return visible && filled && projectile_timer == default_projectile_timer
         && color.x == default_color.x && color.y == default_color.y && color.z == default_color.z && color.w == default_color.w
         && FormatIds(tracked_skills) == FormatIds(ParseIds<GW::Constants::SkillID>(default_tracked_skills))
         && tracked_enemy_models.empty()
@@ -215,6 +215,7 @@ void ProjectileIndicator::LoadSettings(const wchar_t* folder)
     LoadSetting("colory", color.y);
     LoadSetting("colorz", color.z);
     LoadSetting("colorw", color.w);
+    LoadSetting("visible", visible);
     LoadSetting("filled", filled);
     LoadSetting("projectileTimer", projectile_timer);
 
@@ -235,6 +236,7 @@ void ProjectileIndicator::SaveSettings(const wchar_t* folder)
     SaveSetting("colory", color.y);
     SaveSetting("colorz", color.z);
     SaveSetting("colorw", color.w);
+    SaveSetting("visible", visible);
     SaveSetting("filled", filled);
     SaveSetting("projectileTimer", projectile_timer);
     SaveSetting("skills", FormatIds(tracked_skills));

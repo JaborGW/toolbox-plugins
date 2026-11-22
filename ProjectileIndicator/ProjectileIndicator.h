@@ -17,6 +17,7 @@ public:
     const char* Name() const override { return "ProjectileIndicator"; }
     const char* Icon() const override { return ICON_FA_CIRCLE; }
     bool HasSettings() const override { return true; }
+    bool* GetVisiblePtr() override { return &visible; }
 
     void Initialize(ImGuiContext* ctx, ImGuiAllocFns allocator_fns, HMODULE toolbox_dll) override;
     void SignalTerminate() override;
@@ -33,6 +34,7 @@ protected:
     void DrawPluginSettings() override;
 
 private:
+    bool visible = true;
     bool filled = true;
     ImVec4 color = {.557f, 0.f, .627f, .353f};
     int projectile_timer = 1000;
