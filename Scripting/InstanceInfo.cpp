@@ -156,14 +156,14 @@ std::string InstanceInfo::getDecodedAgentName(GW::AgentID id)
             const auto agent = GW::Agents::GetAgentByID(id);
             if (!agent || !agent->GetIsLivingType()) return "";
             const auto npc = GW::Agents::GetNPCByID(agent->GetAsAgentLiving()->player_number);
-            encodedName = npc->name_enc;
+            encodedName = npc ? npc->name_enc : nullptr;
         }
 
         if (!encodedName) return "";
-        wName.reserve(256);
-        GW::UI::AsyncDecodeStr(encodedName, wName.data(), 256);
+        wName.assign(256, L'\0');
+        GW::UI::AsyncDecodeStr(encodedName, wName.data(), wName.size());
     }
-    return WStringToString(wName);
+    return WStringToString(wName.c_str());
 }
 std::string InstanceInfo::getDecodedItemName(uint32_t item_id)
 {
@@ -178,11 +178,11 @@ std::string InstanceInfo::getDecodedItemName(uint32_t item_id)
         encodedName = item->single_item_name;
 
         if (!encodedName) return "";
-        wName.reserve(256);
-        GW::UI::AsyncDecodeStr(encodedName, wName.data(), 256);
+        wName.assign(256, L'\0');
+        GW::UI::AsyncDecodeStr(encodedName, wName.data(), wName.size());
     }
 
-    auto decoded = WStringToString(wName);
+    auto decoded = WStringToString(wName.c_str());
     removeTextInAngledBrackets(decoded);
     return decoded;
 }

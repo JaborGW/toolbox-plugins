@@ -31,7 +31,7 @@ std::string getSkillName(GW::Constants::SkillID id, bool zeroIsAny)
         return zeroIsAny ? "Any" : "No skill";
     static std::unordered_map<GW::Constants::SkillID, std::wstring> decodedNames;
     if (const auto it = decodedNames.find(id); it != decodedNames.end()) {
-        return WStringToString(it->second);
+        return WStringToString(it->second.c_str());
     }
 
     const auto skillData = GW::SkillbarMgr::GetSkillConstantData(id);
@@ -40,8 +40,8 @@ std::string getSkillName(GW::Constants::SkillID id, bool zeroIsAny)
     wchar_t out[8] = {0};
     if (GW::UI::UInt32ToEncStr(skillData->name, out, _countof(out))) {
         auto& decoded = decodedNames[id];
-        decoded.reserve(256);
-        GW::UI::AsyncDecodeStr(out, decoded.data(), 256);
+        decoded.assign(256, L'\0');
+        GW::UI::AsyncDecodeStr(out, decoded.data(), decoded.size());
     }
     return "";
 }
@@ -1155,7 +1155,7 @@ void drawMapIDSelector(GW::Constants::MapID& id)
     {
         if (mapNames.contains(id))
         {
-            ImGui::Text("%s", WStringToString(mapNames[id]).c_str());
+            ImGui::Text("%s", WStringToString(mapNames[id].c_str()).c_str());
             ImGui::SameLine();
         }
         else 
@@ -1165,8 +1165,8 @@ void drawMapIDSelector(GW::Constants::MapID& id)
             if (GW::UI::UInt32ToEncStr(map->name_id, encodedNameBuffer, 8)) 
             {
                 auto& decoded = mapNames[id];
-                decoded.reserve(256);
-                GW::UI::AsyncDecodeStr(encodedNameBuffer, decoded.data(), 256);
+                decoded.assign(256, L'\0');
+                GW::UI::AsyncDecodeStr(encodedNameBuffer, decoded.data(), decoded.size());
             }
         }
     }
