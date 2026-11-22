@@ -69,10 +69,10 @@ namespace {
         SendDialog(static_cast<uint32_t>(dialog_id));
     }
 
-    void OnOpenChest(GW::HookStatus* status, const wchar_t*, int, const LPWSTR*)
+    void OnOpenChest(GW::HookStatus*, const wchar_t*, int, const LPWSTR*)
     {
         if (!Plugin().use_ctos) {
-            status->blocked = false;
+            PluginChat::Write(L"RawDialog", L"/openchest is not active. Enable it in the RawDialog plugin settings.");
             return;
         }
         if (!CtoS::Initialize()) {
