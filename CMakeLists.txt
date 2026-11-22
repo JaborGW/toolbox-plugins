@@ -28,6 +28,11 @@ target_sources(speedrun_world_renderer INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/WorldRenderer.cpp")
 target_include_directories(speedrun_world_renderer INTERFACE ${EARCUT_HPP_INCLUDE_DIRS})
 
+add_library(speedrun_imgui_stdlib INTERFACE)
+target_sources(speedrun_imgui_stdlib INTERFACE
+    "${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.h"
+    "${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp")
+
 macro(add_speedrun_world_renderer PLUGIN)
     target_link_libraries(${PLUGIN} PRIVATE speedrun_world_renderer)
     add_dependencies(${PLUGIN} compile_shaders)
@@ -61,5 +66,7 @@ target_link_libraries(ProjectileIndicator PRIVATE speedrun_model_names)
 add_speedrun_world_renderer(ProjectileIndicator)
 add_speedrun_plugin(RawDialogs)
 add_speedrun_plugin(ShadowstepPredictor)
+add_speedrun_plugin(SkinChanger)
+target_link_libraries(SkinChanger PRIVATE speedrun_imgui_stdlib)
 add_speedrun_plugin(Slowload)
 add_speedrun_plugin(TargetEverything)
