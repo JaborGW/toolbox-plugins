@@ -52,6 +52,12 @@ All lookups of game functions live in `Common/GamePatterns.h`. `tests/PatternTes
 1. Copy the current `Gw.exe` to `test-data/Gw.exe` (ignored by git; never commit it).
 2. Run `python scripts/build.py --preset debug --target run_speedrun_pattern_tests`, or `bin/Debug/speedrun_pattern_tests.exe <Gw.exe or folder> ...` to check other clients.
 
+## History
+
+These plugins used to live in [JaborGW/GWToolboxpp](https://github.com/JaborGW/GWToolboxpp) (branch `combined-plugin-branch`), built against a custom GWCA ([JaborGW/GWCA](https://github.com/JaborGW/GWCA)). That setup no longer works with current GWToolbox++, so the plugins were extracted into this repository and ported to the official, binary GWCA. They are now in maintenance mode.
+
+This repository's history starts at the extraction. For the full development history, see the repositories above.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
