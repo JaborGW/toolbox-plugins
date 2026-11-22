@@ -1898,7 +1898,7 @@ void UseHeroSkillAction::drawSettings()
     ImGui::SameLine();
     ImGui::Text("on hero");
     ImGui::SameLine();
-    drawEnumButton(hero, {.last = GW::Constants::HeroID::ZeiRi, .width = 130.f});
+    drawEnumButton(hero, {.last = GW::Constants::HeroID::GhostOfAlthea, .width = 130.f});
 
     ImGui::PopID();
 }
@@ -2477,7 +2477,7 @@ void AddHeroAction::drawSettings()
     
     ImGui::Text("Add");
     ImGui::SameLine();
-    drawEnumButton(heroId, {.last = GW::Constants::HeroID::ZeiRi, .width = 130.f});
+    drawEnumButton(heroId, {.last = GW::Constants::HeroID::GhostOfAlthea, .width = 130.f});
     ImGui::SameLine();
     ImGui::Text("to the party");
 
@@ -2519,7 +2519,7 @@ void KickHeroAction::drawSettings()
 
     ImGui::Text("Kick");
     ImGui::SameLine();
-    drawEnumButton(heroId, {.last = GW::Constants::HeroID::ZeiRi, .width = 130.f, .renamedEntries = {{GW::Constants::HeroID::NoHero, "All heroes"}}});
+    drawEnumButton(heroId, {.last = GW::Constants::HeroID::GhostOfAlthea, .width = 130.f, .renamedEntries = {{GW::Constants::HeroID::NoHero, "All heroes"}}});
     ImGui::SameLine();
     ImGui::Text("from the party");
 
@@ -2586,7 +2586,7 @@ void LoadSkillbarAction::drawSettings()
     ImGui::SameLine();
     ImGui::Text("on");
     ImGui::SameLine();
-    drawEnumButton(heroId, {.last = GW::Constants::HeroID::ZeiRi, .width = 130.f, .renamedEntries = {{GW::Constants::HeroID::NoHero, "Player"}}});
+    drawEnumButton(heroId, {.last = GW::Constants::HeroID::GhostOfAlthea, .width = 130.f, .renamedEntries = {{GW::Constants::HeroID::NoHero, "Player"}}});
 
     ImGui::PopID();
 }

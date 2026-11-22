@@ -706,6 +706,10 @@ std::string_view toString(GW::Constants::HeroID hero)
             return "Miku";
         case HeroID::ZeiRi:
             return "Zei Ri";
+        case HeroID::Devona:
+            return "Devona";
+        case HeroID::GhostOfAlthea:
+            return "Ghost of Althea";
     }
     return "";
 } 
