@@ -67,9 +67,10 @@ void FlatBowRangeIndicator::Draw(IDirect3DDevice9*)
     if (ImGui::Begin(Name(), nullptr, GetWinFlags())) {
         constexpr auto green = ImVec4{106.f / 255.f, 168.f / 255.f, 79.f / 255.f, 1.f};
         constexpr auto red = ImVec4{224.f / 255.f, 102.f / 255.f, 102.f / 255.f, 1.f};
+        constexpr auto corner_rounding = 4.f;
         const auto pos = ImGui::GetWindowPos();
         const auto size = ImGui::GetWindowSize();
-        ImGui::GetForegroundDrawList()->AddRectFilled(pos, {pos.x + size.x, pos.y + size.y}, ImGui::ColorConvertFloat4ToU32(result == Result::InRange ? green : red));
+        ImGui::GetForegroundDrawList()->AddRectFilled(pos, {pos.x + size.x, pos.y + size.y}, ImGui::ColorConvertFloat4ToU32(result == Result::InRange ? green : red), corner_rounding);
     }
     ImGui::End();
     ImGui::PopStyleVar();
