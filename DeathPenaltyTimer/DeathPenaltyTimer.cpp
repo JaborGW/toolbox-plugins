@@ -123,8 +123,7 @@ void DeathPenaltyTimer::Draw(IDirect3DDevice9* device)
 
 bool DeathPenaltyTimer::HasEmptySettings() const
 {
-    const auto visible = const_cast<DeathPenaltyTimer*>(this)->GetVisiblePtr();
-    return ring.HasDefaultSettings() && (!visible || *visible) && !lock_move && !lock_size && !show_closebutton && !show_menubutton && !show_title;
+    return ring.HasDefaultSettings() && HasDefaultWindowSettings();
 }
 
 void DeathPenaltyTimer::LoadSettings(const wchar_t* folder)

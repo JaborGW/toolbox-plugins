@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ToolboxPlugin.h>
+#include <ToolboxUIPlugin.h>
 #include <PluginUtils.h>
 
 #include <PluginBackups.h>
@@ -21,6 +22,7 @@
 #include <filesystem>
 #include <format>
 #include <string>
+#include <type_traits>
 
 template <typename Base>
 class SpeedrunPlugin : public Base {
@@ -28,6 +30,9 @@ public:
     void Initialize(ImGuiContext* ctx, ImGuiAllocFns allocator_fns, HMODULE toolbox_dll) override
     {
         Base::Initialize(ctx, allocator_fns, toolbox_dll);
+        if constexpr (is_window) {
+            default_window_settings = CurrentWindowSettings();
+        }
         instance = this;
         GW::Chat::CreateCommand(&restore_command_entry, L"restore", OnRestoreCommand);
     }
@@ -73,7 +78,32 @@ protected:
 
     [[nodiscard]] virtual const wchar_t* CommandAlias() const { return nullptr; }
 
+    [[nodiscard]] bool HasDefaultWindowSettings() const
+        requires std::is_base_of_v<ToolboxUIPlugin, Base>
+    {
+        return CurrentWindowSettings() == default_window_settings;
+    }
+
 private:
+    static constexpr bool is_window = std::is_base_of_v<ToolboxUIPlugin, Base>;
+
+    struct WindowSettings {
+        bool visible = true;
+        bool lock_move = false;
+        bool lock_size = false;
+        bool show_closebutton = false;
+        bool show_menubutton = false;
+        bool show_title = false;
+        bool operator==(const WindowSettings&) const = default;
+    };
+
+    [[nodiscard]] WindowSettings CurrentWindowSettings() const
+        requires is_window
+    {
+        const auto visible = const_cast<SpeedrunPlugin*>(this)->GetVisiblePtr();
+        return {!visible || *visible, this->lock_move, this->lock_size, this->show_closebutton, this->show_menubutton, this->show_title};
+    }
+
     [[nodiscard]] std::wstring CommandName() const
     {
         auto name = PluginUtils::ToLower(PluginUtils::StringToWString(this->Name()));
@@ -221,4 +251,5 @@ private:
     inline static GW::HookEntry restore_command_entry;
     inline static SpeedrunPlugin* instance = nullptr;
     std::wstring settings_folder;
+    WindowSettings default_window_settings;
 };
