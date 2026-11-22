@@ -455,9 +455,13 @@ namespace {
             const auto treeHeader = makeScriptHeaderName(*scriptIt);
             const auto treeOpen = ImGui::TreeNodeEx(treeHeader.c_str(), ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_SpanAvailWidth);
 
-            const auto offset = 127.f + (treeOpen ? 0.f : 21.f) - (groupIndex ? 20.f : 0.f);
+            const auto checkboxWidth = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x;
+            const auto offset = 127.f + checkboxWidth + (treeOpen ? 0.f : 21.f) - (groupIndex ? 20.f : 0.f);
             ImGui::SameLine(ImGui::GetContentRegionAvail().x - offset);
 
+            disabledKeysChanged |= ImGui::Checkbox("##enabled", &scriptIt->enabled);
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enabled");
+            ImGui::SameLine();
             if (ImGui::Button("X", ImVec2(20, 0))) {
                 scriptToDelete = scriptIt;
             }
@@ -494,9 +498,6 @@ namespace {
 
                 ImGui::PushID(2);
                 ImGui::Separator();
-                disabledKeysChanged |= ImGui::Checkbox("Enabled", &scriptIt->enabled);
-                ImGui::SameLine();
-
                 Hotkeys::DrawSelector(scriptIt->enabledToggleHotkey, 80.f, "Set enable toggle");
                 if (scriptIt->enabledToggleHotkey.key) {
                     ImGui::SameLine();
