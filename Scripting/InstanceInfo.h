@@ -40,8 +40,6 @@ public:
 private:
 
     InstanceInfo() = default;
-    std::unordered_map<GW::AgentID, std::wstring> decodedAgentNames;
-    std::unordered_map<uint32_t, std::wstring> decodedItemNames;
     std::unordered_map<int, GW::AgentID> storedTargets;
     
     std::unordered_map<DoorID, DoorStatus> doorStatus;

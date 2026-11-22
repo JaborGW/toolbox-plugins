@@ -13,6 +13,7 @@
 #include <GWCA/Packets/StoC.h>
 
 #include <enumUtils.h>
+#include <DecodedText.h>
 
 #include <ranges>
 #include <chrono>
@@ -23,7 +24,7 @@ namespace {
         auto content_start = enc_str.find(0x10a);
         if (content_start == std::wstring::npos) return {};
         content_start++;
-        return enc_str.substr(content_start, enc_str.size() - content_start - 1).data();
+        return std::wstring{enc_str.substr(content_start, enc_str.size() - content_start - 1)};
     }
     
     GW::HookEntry ObjectiveUpdateName_Entry;
@@ -47,10 +48,8 @@ std::optional<QuestInfo::Quest> QuestInfo::getQuest(std::string_view name) const
 
     for (const auto& quest : *questLog) 
     {
-        const auto decodedIt = decodedStrings.find(quest.name);
-        if (decodedIt == decodedStrings.end()) continue;
-
-        auto string = WStringToString(decodedIt->second.c_str());
+        auto string = DecodedText::Utf8(DecodedText::Get(quest.name));
+        if (string.empty()) continue;
         if (string.contains(name)) 
         {
             return QuestInfo::Quest{std::move(string), quest.quest_id};
@@ -68,9 +67,8 @@ std::vector<QuestInfo::Objective> QuestInfo::listObjectives(GW::Constants::Quest
     const auto quest = std::ranges::find_if(*questLog, [&](const auto& quest) { return quest.quest_id == id; });
     if (quest == questLog->end()) return {};
 
-    const auto decodedIt = decodedStrings.find(quest->objectives);
-    if (decodedIt == decodedStrings.end()) return {};
-    const auto& decoded = WStringToString(decodedIt->second.c_str());
+    const auto decoded = DecodedText::Utf8(DecodedText::Get(quest->objectives));
+    if (decoded.empty()) return {};
 
     std::vector<QuestInfo::Objective> result;
     for (const auto word : std::views::split(decoded, '{'))
@@ -91,11 +89,11 @@ std::vector<QuestInfo::Objective> QuestInfo::listMissionObjectives() const
 
     for (const auto& objective : objectives) 
     {
-        const auto decodedIt = decodedStrings.find(objective.enc_str);
-        if (decodedIt == decodedStrings.end()) continue;
+        auto decoded = DecodedText::Utf8(DecodedText::Get(getObjectiveContent(objective.enc_str ? objective.enc_str : L"")));
+        if (decoded.empty()) continue;
 
         const auto status = getMissionObjectiveStatus(objective.objective_id);
-        result.emplace_back(WStringToString(decodedIt->second.c_str()), status == QuestStatus::Completed);
+        result.emplace_back(std::move(decoded), status == QuestStatus::Completed);
     }
 
     return result;
@@ -105,34 +103,23 @@ void QuestInfo::decodeStrings()
 {
     if (const auto questLog = GW::QuestMgr::GetQuestLog()) 
     {
-        for (auto& quest : *questLog) 
+        for (const auto& quest : *questLog) 
         {
-            if (!decodedStrings.contains(quest.name)) 
-            {
-                auto& decoded = decodedStrings[quest.name];
-                decoded.assign(256, L'\0');
-                GW::UI::AsyncDecodeStr(quest.name, decoded.data(), decoded.size());
-            }
-            if (!quest.objectives)
-                objectivesToDecode.push(&quest);
-            else if (!decodedStrings.contains(quest.objectives)) 
-            {
-                auto& decoded = decodedStrings[quest.objectives];
-                decoded.assign(256, L'\0');
-                GW::UI::AsyncDecodeStr(quest.objectives, decoded.data(), decoded.size());
-            }
+            DecodedText::Get(quest.name);
+            if (quest.objectives)
+                DecodedText::Get(quest.objectives);
+            else if (!requestedQuestInfos.contains(quest.quest_id))
+                questsMissingObjectives.push(quest.quest_id);
         }
     }
 
-    for (const auto& objective : GW::GetWorldContext()->mission_objectives) 
+    if (const auto world = GW::GetWorldContext())
     {
-        if (!decodedStrings.contains(objective.enc_str)) 
+        for (const auto& objective : world->mission_objectives) 
         {
-            auto& decoded = decodedStrings[objective.enc_str];
-            decoded.assign(256, L'\0');
-            GW::UI::AsyncDecodeStr(getObjectiveContent(objective.enc_str).c_str(), decoded.data(), decoded.size());
+            if (objective.enc_str)
+                DecodedText::Get(getObjectiveContent(objective.enc_str));
         }
-            
     }
 }
 
@@ -142,6 +129,7 @@ void QuestInfo::initialize()
 
     GW::StoC::RegisterPostPacketCallback<GW::Packet::StoC::InstanceLoadFile>(&InstanceLoadFile_Entry, [this](GW::HookStatus*, const auto*)
     {
+        requestedQuestInfos.clear();
         decodeStrings();
         missionObjectiveStatus.clear();
     });
@@ -182,22 +170,19 @@ void QuestInfo::terminate()
 
 void QuestInfo::update()
 {
-    if (objectivesToDecode.empty()) return;
+    if (questsMissingObjectives.empty()) return;
 
-    const auto& quest = objectivesToDecode.front();
-    if (!quest || quest->objectives) 
+    const auto questId = questsMissingObjectives.front();
+    questsMissingObjectives.pop();
+    if (requestedQuestInfos.contains(questId)) return;
+
+    const auto quest = GW::QuestMgr::GetQuest(questId);
+    if (!quest) return;
+    if (quest->objectives)
     {
-        objectivesToDecode.pop();
+        DecodedText::Get(quest->objectives);
         return;
     }
-
+    requestedQuestInfos.insert(questId);
     GW::QuestMgr::RequestQuestInfo(quest);
-    if (quest->objectives) 
-    {
-        auto& decoded = decodedStrings[quest->objectives];
-        decoded.assign(256, L'\0');
-        GW::UI::AsyncDecodeStr(quest->objectives, decoded.data(), decoded.size());
-    }
-        
-    objectivesToDecode.pop();
 }

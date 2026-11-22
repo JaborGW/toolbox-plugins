@@ -1,5 +1,6 @@
 add_library(speedrun_plugin_common INTERFACE)
 target_sources(speedrun_plugin_common INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Common/DecodedText.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/DirectDialog.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/GwcaExpectations.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Common/GameIds.h"

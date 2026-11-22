@@ -1,5 +1,6 @@
 #include "ProjectileIndicator.h"
 
+#include <DecodedText.h>
 #include <GameIds.h>
 #include <ModelNames.h>
 #include <PluginUtils.h>
@@ -51,21 +52,7 @@ namespace {
         if (id == GW::Constants::SkillID::No_Skill) {
             return "Auto-Attack";
         }
-        static std::unordered_map<GW::Constants::SkillID, std::array<wchar_t, 256>> decoded_names;
-        if (const auto found = decoded_names.find(id); found != decoded_names.end()) {
-            return PluginUtils::WStringToString(found->second.data());
-        }
-        const auto skill = GW::SkillbarMgr::GetSkillConstantData(id);
-        if (!skill) {
-            return "";
-        }
-        wchar_t encoded[8] = {};
-        if (GW::UI::UInt32ToEncStr(skill->name, encoded, std::size(encoded))) {
-            auto& buffer = decoded_names[id];
-            buffer.fill(L'\0');
-            GW::UI::AsyncDecodeStr(encoded, buffer.data(), buffer.size());
-        }
-        return "";
+        return DecodedText::Utf8(DecodedText::SkillName(id));
     }
 
     template <typename T>

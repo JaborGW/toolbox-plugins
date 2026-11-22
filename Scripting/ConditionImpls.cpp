@@ -2035,15 +2035,16 @@ void QuestHasStateCondition::serialize(OutputStream& stream) const
 bool QuestHasStateCondition::check() const
 {
     const auto quest = QuestInfo::getInstance().getQuest(name);
+    const auto questEntry = quest ? GW::QuestMgr::GetQuest(quest->id) : nullptr;
 
     switch (status) 
     {
         case QuestStatus::NotStarted:
             return !quest.has_value();
         case QuestStatus::Running:
-            return quest && !GW::QuestMgr::GetQuest(quest->id)->IsCompleted();
+            return questEntry && !questEntry->IsCompleted();
         case QuestStatus::Completed:
-            return quest && GW::QuestMgr::GetQuest(quest->id)->IsCompleted();
+            return questEntry && questEntry->IsCompleted();
         case QuestStatus::Failed:
             return false;
     }

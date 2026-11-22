@@ -19,31 +19,14 @@
 #include <GWCA/stdlib/UIMgr.h>
 
 #include <ModelNames.h>
+#include <DecodedText.h>
 
-namespace 
-{
-    std::unordered_map<GW::Constants::MapID, std::wstring> mapNames;
-}
 
 std::string getSkillName(GW::Constants::SkillID id, bool zeroIsAny)
 {
     if (id == GW::Constants::SkillID::No_Skill)
         return zeroIsAny ? "Any" : "No skill";
-    static std::unordered_map<GW::Constants::SkillID, std::wstring> decodedNames;
-    if (const auto it = decodedNames.find(id); it != decodedNames.end()) {
-        return WStringToString(it->second.c_str());
-    }
-
-    const auto skillData = GW::SkillbarMgr::GetSkillConstantData(id);
-    if (!skillData || (uint32_t)id >= GameIds::SkillIdCount) return "";
-
-    wchar_t out[8] = {0};
-    if (GW::UI::UInt32ToEncStr(skillData->name, out, _countof(out))) {
-        auto& decoded = decodedNames[id];
-        decoded.assign(256, L'\0');
-        GW::UI::AsyncDecodeStr(out, decoded.data(), decoded.size());
-    }
-    return "";
+    return WStringToString(DecodedText::SkillName(id));
 }
 
 std::string WStringToString(const std::wstring_view str)
@@ -1153,20 +1136,12 @@ void drawMapIDSelector(GW::Constants::MapID& id)
     ImGui::PushItemWidth(50.f);
     if (id != GW::Constants::MapID::None) 
     {
-        if (mapNames.contains(id))
+        if (const auto map = GW::Map::GetMapInfo(id))
         {
-            ImGui::Text("%s", WStringToString(mapNames[id].c_str()).c_str());
-            ImGui::SameLine();
-        }
-        else 
-        {
-            const auto map = GW::Map::GetMapInfo(id);
-            wchar_t encodedNameBuffer[8];
-            if (GW::UI::UInt32ToEncStr(map->name_id, encodedNameBuffer, 8)) 
+            if (const auto name = DecodedText::FromId(map->name_id); !name.empty())
             {
-                auto& decoded = mapNames[id];
-                decoded.assign(256, L'\0');
-                GW::UI::AsyncDecodeStr(encodedNameBuffer, decoded.data(), decoded.size());
+                ImGui::Text("%s", WStringToString(name).c_str());
+                ImGui::SameLine();
             }
         }
     }

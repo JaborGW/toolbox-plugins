@@ -2116,7 +2116,8 @@ void AbandonQuestAction::initialAction()
 
     if (const auto quest = QuestInfo::getInstance().getQuest(name))
     {
-        GW::QuestMgr::AbandonQuest(GW::QuestMgr::GetQuest(quest->id));
+        if (const auto questEntry = GW::QuestMgr::GetQuest(quest->id))
+            GW::QuestMgr::AbandonQuest(questEntry);
     }
 }
 

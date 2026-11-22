@@ -1,6 +1,8 @@
 #include <GameIds.h>
 #include <InstanceInfo.h>
 
+#include <DecodedText.h>
+
 #include <GWCA/GameEntities/Party.h>
 #include <GWCA/GameEntities/Player.h>
 #include <GWCA/GameEntities/NPC.h>
@@ -60,8 +62,6 @@ void InstanceInfo::initialize()
     GW::StoC::RegisterPostPacketCallback<GW::Packet::StoC::InstanceLoadFile>(&InstanceLoadFile_Entry, [this](GW::HookStatus*, const GW::Packet::StoC::InstanceLoadFile*) {
         using namespace std::chrono_literals;
 
-        this->decodedAgentNames.clear();
-        this->decodedItemNames.clear();
         this->storedTargets.clear();
         this->doorStatus.clear();
         instanceIsCompleted = false;
@@ -128,61 +128,36 @@ void InstanceInfo::terminate()
 
 std::string InstanceInfo::getDecodedAgentName(GW::AgentID id)
 {
-    auto& wName = decodedAgentNames[id];
+    const auto world = GW::GetWorldContext();
+    if (!world || id >= world->agent_infos.size()) return "";
+    const wchar_t* encodedName = world->agent_infos[id].name_enc;
 
-    if (wName.empty()) {
-        const wchar_t* encodedName = nullptr;
-
-        // Check in agent infos
-        const auto& agentInfos = GW::GetWorldContext()->agent_infos;
-        if (id >= agentInfos.size()) return "";
-        encodedName = agentInfos[id].name_enc;
-
-        // Check players
-        if (!encodedName)
+    if (!encodedName)
+    {
+        for (const auto& player : world->players)
         {
-            for (const auto& player : GW::GetWorldContext()->players)
-            {
-                if (player.agent_id == id) {
-                    encodedName = player.name_enc;
-                    break;
-                }
+            if (player.agent_id == id) {
+                encodedName = player.name_enc;
+                break;
             }
         }
-
-        // Fall back to NPC name
-        if (!encodedName) 
-        {
-            const auto agent = GW::Agents::GetAgentByID(id);
-            if (!agent || !agent->GetIsLivingType()) return "";
-            const auto npc = GW::Agents::GetNPCByID(agent->GetAsAgentLiving()->player_number);
-            encodedName = npc ? npc->name_enc : nullptr;
-        }
-
-        if (!encodedName) return "";
-        wName.assign(256, L'\0');
-        GW::UI::AsyncDecodeStr(encodedName, wName.data(), wName.size());
     }
-    return WStringToString(wName.c_str());
+
+    if (!encodedName) 
+    {
+        const auto agent = GW::Agents::GetAgentByID(id);
+        if (!agent || !agent->GetIsLivingType()) return "";
+        const auto npc = GW::Agents::GetNPCByID(agent->GetAsAgentLiving()->player_number);
+        encodedName = npc ? npc->name_enc : nullptr;
+    }
+
+    return DecodedText::Utf8(DecodedText::Get(encodedName));
 }
 std::string InstanceInfo::getDecodedItemName(uint32_t item_id)
 {
-    auto& wName = decodedItemNames[item_id];
-
-    if (wName.empty()) {
-        const wchar_t* encodedName = nullptr;
-
-        // Check in agent infos
-        const auto item = GW::Items::GetItemById(item_id);
-        if (!item) return "";
-        encodedName = item->single_item_name;
-
-        if (!encodedName) return "";
-        wName.assign(256, L'\0');
-        GW::UI::AsyncDecodeStr(encodedName, wName.data(), wName.size());
-    }
-
-    auto decoded = WStringToString(wName.c_str());
+    const auto item = GW::Items::GetItemById(item_id);
+    if (!item) return "";
+    auto decoded = DecodedText::Utf8(DecodedText::Get(item->single_item_name));
     removeTextInAngledBrackets(decoded);
     return decoded;
 }

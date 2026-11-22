@@ -4,6 +4,7 @@
 
 #include <unordered_map>
 #include <queue>
+#include <unordered_set>
 #include <optional>
 
 namespace GW {
@@ -52,8 +53,8 @@ private:
 
     QuestInfo() = default;
 
-    std::unordered_map<std::wstring, std::wstring> decodedStrings;
     std::unordered_map<uint32_t, QuestStatus> missionObjectiveStatus;
 
-    std::queue<GW::Quest*> objectivesToDecode;
+    std::queue<GW::Constants::QuestID> questsMissingObjectives;
+    std::unordered_set<GW::Constants::QuestID> requestedQuestInfos;
 };

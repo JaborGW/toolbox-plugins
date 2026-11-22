@@ -1,5 +1,6 @@
 #include "SkinChanger.h"
 
+#include <DecodedText.h>
 #include <PluginUtils.h>
 
 #include <GWCA/Constants/Constants.h>
@@ -48,7 +49,6 @@ namespace {
     GW::HookEntry instance_load_entry;
 
     std::map<GW::Constants::Bag, std::vector<InventoryItem>> available_items;
-    std::unordered_map<std::wstring, std::array<wchar_t, 256>> decoded_names;
 
     std::optional<MinipetTransmog> pending_minipet_transmog;
     std::optional<uint32_t> popped_minipet_id;
@@ -72,17 +72,7 @@ namespace {
 
     std::string Decode(const std::wstring& encoded)
     {
-        if (encoded.empty()) {
-            return "";
-        }
-        const auto [it, inserted] = decoded_names.try_emplace(encoded);
-        if (inserted) {
-            it->second.fill(L'\0');
-            GW::GameThread::Enqueue([encoded, buffer = it->second.data(), size = it->second.size()] {
-                GW::UI::AsyncDecodeStr(encoded.c_str(), buffer, size);
-            });
-        }
-        return RemoveTextInBrackets(PluginUtils::WStringToString(it->second.data()));
+        return RemoveTextInBrackets(DecodedText::Utf8(DecodedText::Get(encoded)));
     }
 
     std::optional<int> ToInt(const std::string& text)
