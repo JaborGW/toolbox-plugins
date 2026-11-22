@@ -190,8 +190,10 @@ namespace {
         const auto first_altitude = GW::Map::QueryAltitude(&query_pos, 5.f);
         ++vertices_processed;
         vertices.front().z = first_altitude;
-        // The old code never stored the last vertex's queried altitude, so the end inherits the start's; kept as-is.
-        vertices.back().z = first_altitude;
+        query_pos = GW::GamePos{vertices.back().x, vertices.back().y, vertices_zplanes.back()};
+        const auto last_altitude = GW::Map::QueryAltitude(&query_pos, 5.f);
+        vertices.back().z = last_altitude;
+        const auto last_index = static_cast<float>(vertices.size() - 1);
 
         for (size_t i = vertices_processed; i < vertices.size() - 1; i++, vertices_processed++) {
             query_pos = GW::GamePos{vertices[i].x, vertices[i].y, vertices_zplanes[i]};
@@ -199,12 +201,13 @@ namespace {
             if (altitude < vertices[i].z) {
                 vertices[i].z = altitude;
             }
-            if (std::abs(altitude - first_altitude) > 20.f) {
-                auto min_diff = std::abs(altitude - first_altitude);
+            const auto guessed_altitude = first_altitude + (last_altitude - first_altitude) * static_cast<float>(i) / last_index;
+            if (std::abs(altitude - guessed_altitude) > 20.f) {
+                auto min_diff = std::abs(altitude - guessed_altitude);
                 for (unsigned zplane = pathing_map->size() - 1; zplane >= 1; --zplane) {
                     query_pos = GW::GamePos{vertices[i].x, vertices[i].y, zplane};
                     altitude = GW::Map::QueryAltitude(&query_pos, 5.f);
-                    const auto diff = std::abs(altitude - first_altitude);
+                    const auto diff = std::abs(altitude - guessed_altitude);
                     if (diff < min_diff && altitude < vertices[i].z) {
                         min_diff = diff;
                         vertices[i].z = altitude;
