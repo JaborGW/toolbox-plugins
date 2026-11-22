@@ -1,12 +1,39 @@
 # Speedrun plugins for GWToolbox++
 
-Plugins for tool-assisted Guild Wars speedruns, built against upstream GWToolbox++ and its binary GWCA.
+Plugins for Guild Wars speedrunning, built for [GWToolbox++](https://github.com/gwdevhub/GWToolboxpp).
 
-## Setup
+## Plugins
+
+| Plugin | What it does |
+|---|---|
+| SpeedrunScriptingTools | Scripts made of triggers, conditions and actions (hotkeys, movement, casting, dialogs, pings, ...). |
+| GWSplits | Split timer for runs, with splits completed automatically by script conditions. |
+| AgentPopTimer | Timer for the minipet/GitB repop cooldown. |
+| DeathPenaltyTimer | Time since your last resurrection. |
+| DialogsWindow | Fork of the old GWToolbox window. Sends dialogs by button, from favorites or by ID. |
+| FlatBowRangeIndicator | Shows the flatbow range around your character. |
+| Follow | `/follow` keeps following your target once it gets too far away. |
+| Leech Signet Cancel | Cancels your current cast when Leech Signet is activated. |
+| PathingVisualizer | Draws the next point your target is walking to. |
+| PitsSouls | Status of the souls in the Pits. |
+| ProjectileIndicator | Marks projectiles of chosen skills while they are in flight. |
+| RawDialog | `/rawdialog <id>` sends a dialog directly; `/openchest` opens a chest. |
+| Shadowstep Predictor | Predicts where Death's Charge and Shadow of Haste will take you. |
+| SkinChanger | Changes item skins and transforms minipets, client-side only. |
+| Slowload | Holds you in the loading screen until you press the hotkey again. |
+| Target Everything | Lets you target agents the game normally treats as untargetable. |
+
+## Install
+
+Copy the plugin DLLs into GWToolbox's `plugins` folder and load them from the toolbox settings. After a game update, a plugin prints a line in chat at load if a feature it needs could not be found in the new client.
+
+## Build
+
+The plugins build as part of a GWToolbox++ checkout:
 
 1. Check out GWToolbox++ (`dev`) and run its bootstrap (`bootstrap/README.md`).
-2. Clone this repository to `plugins/speedrun` inside the GWToolbox++ checkout, and add `/plugins/speedrun/` to the toolbox's `.git/info/exclude`.
-3. In the toolbox, `cmake/gwtoolboxdll_plugins.cmake` needs:
+2. Clone this repository to `plugins/speedrun` inside the toolbox checkout, and add `/plugins/speedrun/` to the toolbox's `.git/info/exclude`.
+3. Add to the toolbox's `cmake/gwtoolboxdll_plugins.cmake`:
 
    ```cmake
    if(EXISTS "${PROJECT_SOURCE_DIR}/plugins/speedrun/CMakeLists.txt")
@@ -14,15 +41,17 @@ Plugins for tool-assisted Guild Wars speedruns, built against upstream GWToolbox
    endif()
    ```
 
-4. Build a plugin with `python scripts/build.py --preset debug --target <Plugin>`; the DLL lands in the toolbox's `bin/<Config>/`.
+4. Build with `python scripts/build.py --preset debug --target <Plugin>` (or `--preset relwithdebinfo`). The DLL lands in the toolbox's `bin/<Config>/`.
 
-`Common/` holds the code shared between plugins.
+`Common/` holds the code shared between plugins, `Scripting/` the script engine used by SpeedrunScriptingTools and GWSplits.
 
 ## Pattern tests
 
-All memory patterns, assertion lookups and GWCA-internal assumptions the plugins rely on live in `Common/GamePatterns.h`. `tests/PatternTests.cpp` maps a game client with `LoadLibraryEx(DONT_RESOLVE_DLL_REFERENCES)` (nothing runs), points GWCA's own `GW::Scanner` at it and runs the same lookups the plugins use in game: exact match counts, function prologues, the game server pointer, the derived CtoS opcodes, and the `gwca.dll` export stub TargetEverything relies on.
+All lookups of game functions live in `Common/GamePatterns.h`. `tests/PatternTests.cpp` checks them against a game client without running it:
 
-1. Copy the current `Gw.exe` to `test-data/Gw.exe` (ignored by git). The test fails if no client is found.
-2. `python scripts/build.py --preset debug --target run_speedrun_pattern_tests` builds and runs it; or run `bin/Debug/speedrun_pattern_tests.exe [Gw.exe or folder ...]` to check other clients, e.g. a folder of client backups.
+1. Copy the current `Gw.exe` to `test-data/Gw.exe` (ignored by git; never commit it).
+2. Run `python scripts/build.py --preset debug --target run_speedrun_pattern_tests`, or `bin/Debug/speedrun_pattern_tests.exe <Gw.exe or folder> ...` to check other clients.
 
-`Common/GwcaExpectations.cpp` is compiled into every plugin and `static_assert`s the GWCA constant values the plugins depend on numerically, so a GWCA update that renumbers them fails the build.
+## License
+
+MIT, see [LICENSE](LICENSE).
