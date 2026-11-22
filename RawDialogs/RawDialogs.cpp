@@ -1,5 +1,7 @@
 #include "RawDialogs.h"
 
+#include <GameIdInput.h>
+
 #include "CtoS.h"
 
 #include <DirectDialog.h>
@@ -60,13 +62,12 @@ namespace {
             status->blocked = false;
             return;
         }
-        wchar_t* end = nullptr;
-        const auto dialog_id = std::wcstoul(argv[1], &end, 0);
-        if (end == argv[1] || *end != L'\0') {
+        const auto dialog_id = GameIdInput::Parse(std::wstring_view{argv[1]});
+        if (!dialog_id) {
             PluginChat::Write(L"RawDialog", L"Invalid dialog id. Example: /rawdialog 0x806501");
             return;
         }
-        SendDialog(static_cast<uint32_t>(dialog_id));
+        SendDialog(*dialog_id);
     }
 
     void OnOpenChest(GW::HookStatus*, const wchar_t*, int, const LPWSTR*)

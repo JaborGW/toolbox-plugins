@@ -1,4 +1,6 @@
 #include <InstanceProgress.h>
+
+#include <GameIdInput.h>
 #include <GameIds.h>
 #include <ConditionImpls.h>
 
@@ -981,7 +983,7 @@ bool Deprecated_ObjectiveHasStateCondition::drawSettings()
     ImGui::Text("If the quest objective has status");
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("id", reinterpret_cast<int*>(&id), 0);
+    GameIdInput::Draw("id", id);
     ImGui::SameLine();
     drawEnumButton(status, {.last = QuestStatus::Failed});
     ImGui::SameLine();
@@ -1101,7 +1103,7 @@ bool PlayerHasItemEquippedCondition::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::SameLine();
     ImGui::PushItemWidth(90);
-    ImGui::InputInt("model id", &modelId, 0);
+    GameIdInput::Draw("model id", modelId);
     ImGui::PopItemWidth();
 
     ImGui::PopID();
@@ -1137,7 +1139,7 @@ bool ItemInInventoryCondition::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::SameLine();
     ImGui::PushItemWidth(90);
-    ImGui::InputInt("model id", &modelId, 0);
+    GameIdInput::Draw("model id", modelId);
     ImGui::PopItemWidth();
 
     ImGui::PopID();

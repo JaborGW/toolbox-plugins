@@ -1,4 +1,6 @@
 #include <GameIds.h>
+
+#include <GameIdInput.h>
 #include <enumUtils.h>
 
 #include <bitset>
@@ -1060,7 +1062,7 @@ void drawSkillIDSelector(GW::Constants::SkillID& id, bool zeroIsAny)
     ImGui::Text("%s", getSkillName(id, zeroIsAny).c_str());
     ImGui::SameLine();
     ImGui::SameLine();
-    ImGui::InputInt("Skill ID", reinterpret_cast<int*>(&id), 0);
+    GameIdInput::Draw("Skill ID", id);
     ImGui::PopItemWidth();
 }
 
@@ -1079,7 +1081,7 @@ void drawMapIDSelector(GW::Constants::MapID& id)
         }
     }
 
-    ImGui::InputInt("Map ID", reinterpret_cast<int*>(&id), 0);
+    GameIdInput::Draw("Map ID", id);
     ImGui::PopItemWidth();
 }
 void drawModelIDSelector(uint16_t& id, std::optional<std::string_view> label)
@@ -1091,14 +1093,7 @@ void drawModelIDSelector(uint16_t& id, std::optional<std::string_view> label)
         ImGui::Text("%s", modelNameIt->second.data());
         ImGui::SameLine();
     }
-    int editValue = id;
-
-    if (ImGui::InputInt(label ? label->data() : "Model ID", &editValue, 0)) {
-        if (editValue >= 0 && editValue <= 0xFFFF)
-            id = uint16_t(editValue);
-        else
-            id = 0;
-    }
+    GameIdInput::Draw(label ? label->data() : "Model ID", id);
     ImGui::PopItemWidth();
 }
 

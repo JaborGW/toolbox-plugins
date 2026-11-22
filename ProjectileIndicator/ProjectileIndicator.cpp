@@ -1,5 +1,7 @@
 #include "ProjectileIndicator.h"
 
+#include <GameIdInput.h>
+
 #include <DecodedText.h>
 #include <GameIds.h>
 #include <ModelNames.h>
@@ -93,7 +95,7 @@ namespace {
                 ImGui::SameLine();
             }
             ImGui::PushItemWidth(100.f);
-            ImGui::InputInt("", reinterpret_cast<int*>(&*it), 0);
+            GameIdInput::Draw("", *it);
             ImGui::PopItemWidth();
             ImGui::PopID();
         }

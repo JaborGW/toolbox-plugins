@@ -1,5 +1,7 @@
 #include "DialogsWindow.h"
 
+#include <GameIdInput.h>
+
 #include <DirectDialog.h>
 #include <PluginGui.h>
 
@@ -98,14 +100,6 @@ namespace {
     uint32_t QuestRewardDialog(const QuestID quest)
     {
         return (static_cast<uint32_t>(quest) << 8) | 0x800007;
-    }
-
-    bool ParseInt(const char* text, int* value)
-    {
-        char* end;
-        errno = 0;
-        *value = static_cast<int>(std::strtol(text, &end, 0));
-        return *end == 0 && errno != ERANGE;
     }
 
     const char* QuestName(void* data, const int index)
@@ -230,8 +224,8 @@ void DialogsWindow::Draw(IDirect3DDevice9*)
             }
             ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
             if (ImGui::Button("Send##2", ImVec2(60.0f, 0))) {
-                if (int id; ParseInt(custom_dialog_buffer, &id) && id >= 0) {
-                    SendDialog(static_cast<uint32_t>(id));
+                if (const auto id = GameIdInput::Parse(std::string_view{custom_dialog_buffer})) {
+                    SendDialog(*id);
                 }
             }
         }

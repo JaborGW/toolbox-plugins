@@ -1,4 +1,6 @@
 #include <GamePatterns.h>
+
+#include <GameIdInput.h>
 #include <ActionImpls.h>
 
 #include <ConditionIO.h>
@@ -795,7 +797,7 @@ void UseItemAction::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("model ID", &id, 0);
+    GameIdInput::Draw("model ID", id);
     ImGui::PopItemWidth();
 
     ImGui::PopID();
@@ -832,7 +834,7 @@ void EquipItemAction::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("model ID", &id, 0);
+    GameIdInput::Draw("model ID", id);
     ImGui::PopItemWidth();
     ImGui::SameLine();
     if (hasModstruct)
@@ -962,7 +964,7 @@ void SendDialogAction::drawSettings()
     ImGui::Text("Send Dialog:");
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("ID", &id, 0);
+    GameIdInput::Draw("ID", id, GameIdInput::Format::Hex);
     ImGui::PopItemWidth();
 
     ImGui::PopID();
@@ -1595,7 +1597,7 @@ void RepopMinipetAction::drawSettings()
     ImGui::SameLine();
     ImGui::Text("%s", itemName.c_str());
     ImGui::SameLine();
-    ImGui::InputInt("Item model ID", &itemModelId, 0);
+    GameIdInput::Draw("Item model ID", itemModelId);
     ImGui::SameLine();
     drawModelIDSelector(agentModelId, "Agent model ID");
     ImGui::PopItemWidth();
@@ -2184,7 +2186,7 @@ void MoveItemToSlotAction::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("model ID", &id, 0);
+    GameIdInput::Draw("model ID", id);
     ImGui::PopItemWidth();
     ImGui::SameLine();
     if (hasModstruct) {
@@ -2621,7 +2623,7 @@ void DropItemAction::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("model ID", &id, 0);
+    GameIdInput::Draw("model ID", id);
     ImGui::PopItemWidth();
 
     ImGui::PopID();
@@ -2659,7 +2661,7 @@ void DestroyItemAction::drawSettings()
     ImGui::Text("%s", itemName.c_str());
     ImGui::PushItemWidth(90.f);
     ImGui::SameLine();
-    ImGui::InputInt("model ID", &id, 0);
+    GameIdInput::Draw("model ID", id);
     ImGui::PopItemWidth();
 
     ImGui::PopID();

@@ -1,5 +1,7 @@
 #include "SkinChanger.h"
 
+#include <GameIdInput.h>
+
 #include <DecodedText.h>
 #include <PluginUtils.h>
 
@@ -384,7 +386,7 @@ namespace {
             }
         };
         ImGui::PushID(0);
-        ImGui::InputInt("", &npc_transmog.npc_id, 0);
+        GameIdInput::Draw("", npc_transmog.npc_id);
         tooltip("Desired NPC ID");
         ImGui::PopID();
         ImGui::SameLine();
@@ -461,12 +463,12 @@ namespace {
         ImGui::Text("Current:");
         ImGui::SameLine();
         ImGui::PushID(1);
-        ImGui::InputInt("", &transmog.agent_to_replace_model_id, 0);
+        GameIdInput::Draw("", transmog.agent_to_replace_model_id);
         tooltip("Agent model ID");
         ImGui::PopID();
         ImGui::SameLine();
         ImGui::PushID(2);
-        ImGui::InputInt("", &transmog.item_to_replace_model_id, 0);
+        GameIdInput::Draw("", transmog.item_to_replace_model_id);
         tooltip("Item model ID");
         ImGui::PopID();
         ImGui::SameLine();
