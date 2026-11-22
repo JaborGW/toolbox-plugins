@@ -9,11 +9,11 @@
 #include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Utilities/Hook.h>
 #include <GWCA/Utilities/Hooker.h>
-#include <GWCA/Utilities/Scanner.h>
 
 #include <PluginChat.h>
 
 #include <atomic>
+#include <cstring>
 #include <format>
 #include <string>
 
@@ -28,15 +28,8 @@ namespace {
     using GetAgentMatchesFlags_pt = bool(__cdecl*)(const GW::Agent* agent, AgentTargetFlags flags) noexcept;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Func = nullptr;
     GetAgentMatchesFlags_pt GetAgentMatchesFlags_Ret = nullptr;
-    using ChangeTarget_pt = bool(__cdecl*)(uint32_t agent_id) noexcept;
-    ChangeTarget_pt ChangeTarget_Func = nullptr;
-    ChangeTarget_pt ChangeTarget_Ret = nullptr;
-    using GameSetTarget_pt = void(__cdecl*)(uint32_t agent_id, uint32_t auto_target_id);
-    GameSetTarget_pt GameSetTarget_Func = nullptr;
-    std::atomic<uint32_t> forced_targets = 0;
-
     int hook_status = -1;
-    int change_target_hook_status = -1;
+    bool hooked_implementation = false;
     std::atomic<uint32_t> filter_calls = 0;
     std::atomic<uint32_t> overridden_rejections = 0;
     std::atomic<uint32_t> last_overridden_agent = 0;
@@ -102,18 +95,19 @@ namespace {
         return matches;
     }
 
-    // The game's change-target UI message refuses agents its filter rejects; its own set-target routine only checks that the agent exists.
-    bool __cdecl OnChangeTarget(const uint32_t agent_id) noexcept
+    // GWCA's own change-target check calls the implementation behind the export directly, so hook that instead of the export stub.
+    GetAgentMatchesFlags_pt ResolveImplementation(const GetAgentMatchesFlags_pt export_stub)
     {
-        GW::Hook::EnterHook();
-        auto changed = ChangeTarget_Ret(agent_id);
-        if (agent_id && GW::Agents::GetTargetId() != agent_id && GameSetTarget_Func && GW::Agents::GetAgentByID(agent_id)) {
-            GameSetTarget_Func(agent_id, 0);
-            ++forced_targets;
-            changed = GW::Agents::GetTargetId() == agent_id;
+        constexpr uint8_t stub_prologue[] = {0x55, 0x89, 0xe5, 0x83, 0xec, 0x18, 0x8b, 0x45, 0x0c, 0x89, 0x44, 0x24, 0x04, 0x8b, 0x45, 0x08, 0x89, 0x04, 0x24, 0xe8};
+        const auto bytes = reinterpret_cast<const uint8_t*>(export_stub);
+        if (std::memcmp(bytes, stub_prologue, sizeof(stub_prologue)) != 0) {
+            return export_stub;
         }
-        GW::Hook::LeaveHook();
-        return changed;
+        int32_t relative;
+        std::memcpy(&relative, bytes + sizeof(stub_prologue), sizeof(relative));
+        hooked_implementation = true;
+        const auto call_end = reinterpret_cast<uintptr_t>(bytes) + sizeof(stub_prologue) + sizeof(relative);
+        return reinterpret_cast<GetAgentMatchesFlags_pt>(call_end + relative);
     }
 
     const GW::AgentLiving* NearestRejectedAgent()
@@ -158,24 +152,19 @@ void TargetEverything::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocat
 {
     ToolboxPlugin::Initialize(ctx, allocator_fns, toolbox_dll);
     const auto gwca = GetModuleHandleW(L"gwca.dll");
-    GetAgentMatchesFlags_Func = gwca ? reinterpret_cast<GetAgentMatchesFlags_pt>(GetProcAddress(gwca, "GW_Agents_GetAgentMatchesFlags")) : nullptr;
+    const auto export_stub = gwca ? reinterpret_cast<GetAgentMatchesFlags_pt>(GetProcAddress(gwca, "GW_Agents_GetAgentMatchesFlags")) : nullptr;
+    GetAgentMatchesFlags_Func = export_stub ? ResolveImplementation(export_stub) : nullptr;
     if (GetAgentMatchesFlags_Func) {
         hook_status = GW::Hook::CreateHook(&GetAgentMatchesFlags_Func, &OnGetAgentMatchesFlags, &GetAgentMatchesFlags_Ret);
         GW::Hook::EnableHooks(GetAgentMatchesFlags_Func);
-    }
-    GameSetTarget_Func = reinterpret_cast<GameSetTarget_pt>(GW::Scanner::ToFunctionStart(GW::Scanner::FindAssertion("AvSelect.cpp", "!(autoAgentId && !ManagerFindAgent(autoAgentId))", 0, 0)));
-    ChangeTarget_Func = gwca ? reinterpret_cast<ChangeTarget_pt>(GetProcAddress(gwca, "GW_Agents_ChangeTarget")) : nullptr;
-    if (ChangeTarget_Func && GameSetTarget_Func) {
-        change_target_hook_status = GW::Hook::CreateHook(&ChangeTarget_Func, &OnChangeTarget, &ChangeTarget_Ret);
-        GW::Hook::EnableHooks(ChangeTarget_Func);
     }
     GW::Chat::CreateCommand(&chat_command_entry, L"targeteverything", [](GW::HookStatus*, const wchar_t*, const int argc, const LPWSTR* argv) {
         if (argc >= 2 && std::wstring(argv[1]) == L"nearest") {
             TryTargetNearestRejected();
             return;
         }
-        PluginChat::Write(L"Target Everything", std::format(L"filter hook: {}, change-target hook: {}, game set-target found: {}, filter calls: {}, overridden rejections: {}, last overridden agent: {}, forced targets: {}",
-            hook_status, change_target_hook_status, GameSetTarget_Func != nullptr, filter_calls.load(), overridden_rejections.load(), last_overridden_agent.load(), forced_targets.load()));
+        PluginChat::Write(L"Target Everything", std::format(L"filter hook: {}, hooked implementation: {}, filter calls: {}, overridden rejections: {}, last overridden agent: {}",
+            hook_status, hooked_implementation, filter_calls.load(), overridden_rejections.load(), last_overridden_agent.load()));
     });
 }
 
@@ -186,9 +175,5 @@ void TargetEverything::SignalTerminate()
     if (GetAgentMatchesFlags_Func) {
         GW::Hook::DisableHooks(GetAgentMatchesFlags_Func);
         GW::Hook::RemoveHook(GetAgentMatchesFlags_Func);
-    }
-    if (ChangeTarget_Func && change_target_hook_status == 0) {
-        GW::Hook::DisableHooks(ChangeTarget_Func);
-        GW::Hook::RemoveHook(ChangeTarget_Func);
     }
 }
