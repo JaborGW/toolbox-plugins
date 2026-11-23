@@ -293,6 +293,65 @@ namespace {
 
     std::vector<PolyRenderable> renderables;
     std::optional<PolyRenderable> polyline;
+
+    // GW skips redundant state sets, so anything left changed leaks into its next frame (red water).
+    class DeviceStateGuard {
+    public:
+        explicit DeviceStateGuard(IDirect3DDevice9* device) : device(device)
+        {
+            device->GetRenderState(D3DRS_SCISSORTESTENABLE, &scissor_test);
+            device->GetRenderState(D3DRS_STENCILENABLE, &stencil);
+            device->GetVertexShaderConstantF(0, vertex_constants, 8);
+            device->GetPixelShaderConstantF(0, pixel_constants, 3);
+            device->GetPixelShaderConstantB(0, &pixel_bool, 1);
+            device->GetVertexShader(&vertex_shader);
+            device->GetPixelShader(&pixel_shader);
+            device->GetVertexDeclaration(&declaration);
+            device->GetFVF(&fvf);
+            device->GetStreamSource(0, &stream, &stream_offset, &stream_stride);
+        }
+
+        ~DeviceStateGuard()
+        {
+            device->SetRenderState(D3DRS_SCISSORTESTENABLE, scissor_test);
+            device->SetRenderState(D3DRS_STENCILENABLE, stencil);
+            device->SetVertexShaderConstantF(0, vertex_constants, 8);
+            device->SetPixelShaderConstantF(0, pixel_constants, 3);
+            device->SetPixelShaderConstantB(0, &pixel_bool, 1);
+            device->SetVertexShader(vertex_shader);
+            device->SetPixelShader(pixel_shader);
+            if (fvf) {
+                device->SetFVF(fvf);
+            }
+            else {
+                device->SetVertexDeclaration(declaration);
+            }
+            device->SetStreamSource(0, stream, stream_offset, stream_stride);
+            for (auto resource : {static_cast<IUnknown*>(vertex_shader), static_cast<IUnknown*>(pixel_shader), static_cast<IUnknown*>(declaration), static_cast<IUnknown*>(stream)}) {
+                if (resource) {
+                    resource->Release();
+                }
+            }
+        }
+
+        DeviceStateGuard(const DeviceStateGuard&) = delete;
+        DeviceStateGuard& operator=(const DeviceStateGuard&) = delete;
+
+    private:
+        IDirect3DDevice9* device;
+        DWORD scissor_test = 0;
+        DWORD stencil = 0;
+        float vertex_constants[8 * 4]{};
+        float pixel_constants[3 * 4]{};
+        BOOL pixel_bool = FALSE;
+        IDirect3DVertexShader9* vertex_shader = nullptr;
+        IDirect3DPixelShader9* pixel_shader = nullptr;
+        IDirect3DVertexDeclaration9* declaration = nullptr;
+        DWORD fvf = 0;
+        IDirect3DVertexBuffer9* stream = nullptr;
+        UINT stream_offset = 0;
+        UINT stream_stride = 0;
+    };
 }
 
 namespace WorldRenderer {
@@ -341,14 +400,11 @@ namespace WorldRenderer {
         if (!camera) {
             return;
         }
+        const DeviceStateGuard state_guard{device};
         if (device->SetVertexShader(vertex_shader) != D3D_OK || device->SetPixelShader(pixel_shader) != D3D_OK || device->SetVertexDeclaration(vertex_declaration) != D3D_OK) {
             return;
         }
 
-        DWORD old_scissor_test = 0;
-        DWORD old_stencil = 0;
-        device->GetRenderState(D3DRS_SCISSORTESTENABLE, &old_scissor_test);
-        device->GetRenderState(D3DRS_STENCILENABLE, &old_stencil);
         device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
         device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
 
@@ -371,9 +427,6 @@ namespace WorldRenderer {
                 polyline->Draw(device);
             }
         }
-
-        device->SetRenderState(D3DRS_SCISSORTESTENABLE, old_scissor_test);
-        device->SetRenderState(D3DRS_STENCILENABLE, old_stencil);
     }
 
     void Terminate()
