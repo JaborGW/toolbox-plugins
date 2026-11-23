@@ -3,6 +3,7 @@
 #include <ToolboxUIPlugin.h>
 #include <SpeedrunPlugin.h>
 
+#include <DirectDialog.h>
 #include <IconsFontAwesome5.h>
 
 #include <vector>
@@ -19,6 +20,9 @@ public:
     const char* Name() const override { return "Dialogs"; }
     const char* Icon() const override { return ICON_FA_COMMENT_DOTS; }
 
+    void Initialize(ImGuiContext* ctx, ImGuiAllocFns allocator_fns, HMODULE toolbox_dll) override;
+    void SignalTerminate() override;
+    void Update(float delta) override;
     void Draw(IDirect3DDevice9* device) override;
 
     void LoadSettings(const wchar_t*) override;
@@ -31,7 +35,9 @@ protected:
     void DrawPluginSettings() override;
 
 private:
-    void SendDialog(uint32_t dialog_id) const;
+    void SendDialog(uint32_t dialog_id);
+
+    DirectDialog::QuestDialogSender quest_dialog_sender;
 
     static constexpr int default_favorite_count = 3;
 

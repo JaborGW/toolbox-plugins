@@ -113,9 +113,27 @@ namespace {
     }
 }
 
-void DialogsWindow::SendDialog(const uint32_t dialog_id) const
+void DialogsWindow::Initialize(ImGuiContext* ctx, const ImGuiAllocFns allocator_fns, const HMODULE toolbox_dll)
 {
-    if (!(use_function_ptr && DirectDialog::Send(dialog_id))) {
+    SpeedrunPlugin::Initialize(ctx, allocator_fns, toolbox_dll);
+    quest_dialog_sender.Initialize();
+}
+
+void DialogsWindow::SignalTerminate()
+{
+    quest_dialog_sender.Terminate();
+    SpeedrunPlugin::SignalTerminate();
+}
+
+void DialogsWindow::Update(const float delta)
+{
+    SpeedrunPlugin::Update(delta);
+    quest_dialog_sender.Update();
+}
+
+void DialogsWindow::SendDialog(const uint32_t dialog_id)
+{
+    if (!(use_function_ptr && quest_dialog_sender.Send(dialog_id))) {
         GW::Agents::SendDialog(dialog_id);
     }
 }
