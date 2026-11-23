@@ -56,7 +56,7 @@ python scripts/build.py --preset release --target SkinChanger --target SpeedrunS
 - Debug toolbox: `bin/Debug/GWToolbox.exe` from the toolbox build. Debug and release plugins both load in either toolbox build, but test what you ship.
 - Toolbox log: `log.txt` in the same `GWToolboxpp/<computer name>/` folder. Plugins write there via the toolbox's `Log::`.
 - Settings: `<plugins folder>/<Name>.json`. `LoadSetting` falls back to a legacy `<Name>.ini` **only if the JSON lacks the key**; restoring from an old ini needs the JSON deleted (with the plugin unloaded).
-- Game client backups may exist for comparison (older `Gw.exe` versions). Treat them as read-only; copy before launching or modifying one.
+- Game client backups may exist for comparison (older `Gw.exe` versions, e.g. `D:\Spiele\gwclientbackup\<date>\`). **Never start, modify or overwrite them.** Read them in place or copy them first; `test-data/Gw.exe` is the working copy for static analysis.
 
 ## Guild Wars primer
 
@@ -74,6 +74,8 @@ Just enough game knowledge to read the code:
 ## GWCA
 
 GWCA is the library that wraps the game's memory and functions. The toolbox uses the **official binary GWCA 4.12**: headers in the toolbox's `Dependencies/GWCA/include`, the implementation is `gwca.dll` loaded at runtime. You can't patch GWCA; work around it in plugin code.
+
+- **GWCA is closed source.** The only sources are the headers in `Dependencies/GWCA` and an old open checkout at [JaborGW/GWCA](https://github.com/JaborGW/GWCA). Patterns, offsets and packet layouts from the old checkout must be checked against a matching old client from the backups (see Installing), not assumed to hold for the current one.
 
 - **Managers:** `GW::Agents`, `GW::Map`, `GW::Chat`, `GW::UI`, `GW::StoC`, `GW::GameThread`, `GW::Items`, `GW::Skillbar`, `GW::Quest`... Context accessors (`GW::GetWorldContext()`, `GetCharContext()`, `GetGameContext()`) return raw pointers into game memory that **can be null** (load screens, character select). Check every pointer every time; never cache them across frames.
 - **Headers:** `GWCA/stdlib/*.h` are adapter headers for `std::function` overloads. Don't include both `GWCA/stdlib/X.h` and `GWCA/Managers/X.h` for the same manager in one translation unit; it fails to compile. `PluginUtils.h` needs `imgui.h` included first.
