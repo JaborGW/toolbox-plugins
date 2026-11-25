@@ -10,6 +10,7 @@ Plugins for Guild Wars speedrunning, built for [GWToolbox++](https://github.com/
 | GWSplits | Split timer for runs, with splits completed automatically by script conditions. |
 | AgentPopTimer | Timer for the minipet/GitB repop cooldown. |
 | DeathPenaltyTimer | Time since your last resurrection. |
+| DhuumCalculator | Dhuum fight: damage and rest rates, finish times, and when to switch ghosts to Ghostly Fury. |
 | DialogsWindow | Fork of the old GWToolbox window. Sends dialogs by button, from favorites or by ID. |
 | FlatBowRangeIndicator | Shows the flatbow range around your character. |
 | Follow | `/follow` keeps following your target once it gets too far away. |

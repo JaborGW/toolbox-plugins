@@ -65,6 +65,7 @@ endmacro()
 
 add_speedrun_plugin(AgentPopTimer)
 target_link_libraries(AgentPopTimer PRIVATE speedrun_ring_timer)
+add_speedrun_plugin(DhuumCalculator)
 add_speedrun_plugin(DialogsWindow)
 add_speedrun_plugin(FlatBowRangeIndicator)
 add_speedrun_plugin(GWSplits)

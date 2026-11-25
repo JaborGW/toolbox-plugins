@@ -23,7 +23,7 @@ tests/PatternTests.cpp offline checks of every game-function lookup
 test-data/Gw.exe       (ignored) client the pattern tests run against
 ```
 
-Plugins: AgentPopTimer, DeathPenaltyTimer, DialogsWindow, FlatBowRangeIndicator, Follow, GWSplits, LeechSignetCancel, PathingVisualizer, PitsSoulsWindow, ProjectileIndicator, RawDialogs, ShadowstepPredictor, SkinChanger, Slowload, SpeedrunScriptingTools (SST), TargetEverything. The README has a one-line description of each.
+Plugins: AgentPopTimer, DeathPenaltyTimer, DhuumCalculator, DialogsWindow, FlatBowRangeIndicator, Follow, GWSplits, LeechSignetCancel, PathingVisualizer, PitsSoulsWindow, ProjectileIndicator, RawDialogs, ShadowstepPredictor, SkinChanger, Slowload, SpeedrunScriptingTools (SST), TargetEverything. The README has a one-line description of each.
 
 ## Relationship to GWToolbox++
 
